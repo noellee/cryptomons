@@ -34,17 +34,5 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
 
-@Component
-export default class HelloWorld extends Vue {
-  fetchCryptomons() {
-    this.$store.dispatch('fetchCryptomons', { owner: 'fasfasf' });
-  }
-
-  get allCryptomons() {
-    return this.$store.getters.getAllCryptomons();
-  }
-}
 </script>

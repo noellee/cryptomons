@@ -1,6 +1,6 @@
 import Web3 from 'web3';
 // @ts-ignore
-import { Contract } from 'web3-eth-contract'; // eslint-disable-line import/no-unresolved
+import { Contract } from 'web3-eth-contract'; // eslint-disable-line import/no-extraneous-dependencies
 import getContract from '@/contracts/CryptomonsGameContract';
 import Cryptomon from './Cryptomon';
 
@@ -35,5 +35,10 @@ export default class CryptomonGame {
     }
     return (await Promise.all(promises))
       .map(({ health, strength }) => new Cryptomon(health, strength));
+  }
+
+  async initStarterCryptomons(): Promise<void> {
+    const from = this.defaultAccount;
+    await this._contract.methods.initStarterCryptomons().send({ from });
   }
 }

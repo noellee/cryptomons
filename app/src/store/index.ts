@@ -21,8 +21,10 @@ export default new Vuex.Store<RootState>({
     game: null,
   },
   getters: {
-    [Getters.GetAllCryptomons]: state => () => state.cryptomons,
+    [Getters.HasFetchedForOwner]: state => (owner: string) => state.cryptomons[owner] !== undefined,
+    [Getters.GetCryptomons]: state => (owner: string) => state.cryptomons[owner] ?? [],
     [Getters.IsWeb3Available]: state => () => state.web3 !== null,
+    [Getters.DefaultAccount]: state => state.game?.defaultAccount,
   },
   mutations: {
     updateCryptomons: (state, payload: { owner: string, cryptomons: Cryptomon[]}) => {
@@ -41,7 +43,7 @@ export default new Vuex.Store<RootState>({
       if (!state.game) throw new TypeError();
       const ownerAddr = owner || state.game.defaultAccount;
       const cryptomons = await state.game.getAllCryptomons(ownerAddr);
-      commit('updateCryptomons', { ownerAddr, cryptomons });
+      commit('updateCryptomons', { owner: ownerAddr, cryptomons });
     },
     [Actions.InitApp]: async ({ getters, commit }) => {
       if (!getters.isWeb3Available()) {
@@ -51,6 +53,10 @@ export default new Vuex.Store<RootState>({
         console.log(`Using account ${web3.eth.defaultAccount}`);
         commit('loadWeb3', web3);
       }
+    },
+    [Actions.InitStarterCryptomons]: async ({ state }) => {
+      if (!state.game) throw new TypeError();
+      await state.game.initStarterCryptomons();
     },
   },
   modules: {

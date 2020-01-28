@@ -1,5 +1,7 @@
 enum Getters {
   IsWeb3Available = 'isWeb3Available',
-  GetAllCryptomons = 'getAllCryptomons',
+  GetCryptomons = 'getCryptomons',
+  DefaultAccount = 'defaultAccount',
+  HasFetchedForOwner = 'hasFetchedForOwner',
 }
 export default Getters;
