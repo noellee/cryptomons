@@ -1,5 +1,6 @@
 <template>
   <div class="cryptomon-card">
+    <h2>{{ cryptomon.name }}</h2>
     <img :src="image" :alt="cryptomon.elementAsString" width="240px" />
     <ul>
       <li><span>Element:</span>{{ cryptomon.elementAsString }}</li>
@@ -48,6 +49,11 @@ export default class CryptomonList extends Vue {
     padding: 10px;
     box-shadow: #000000 2px 2px 4px;
     color: #2c3e50;
+  }
+
+  .cryptomon-card > h2 {
+    margin-block-start: 0.4em;
+    margin-block-end: 0.4em;
   }
 
   .cryptomon-card > img {

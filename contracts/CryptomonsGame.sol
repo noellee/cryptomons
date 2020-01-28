@@ -5,6 +5,7 @@ contract CryptomonsGame {
 
     struct Cryptomon {
         uint id;
+        string name;
         Element element;
         uint health;
         uint strength;
@@ -27,7 +28,7 @@ contract CryptomonsGame {
     // maps owner => owned cryptomon ids
     mapping(address => Owner) public owners;
 
-    function initStarterCryptomon() public payable {
+    function initStarterCryptomon(string memory name, Element element) public payable {
         require(totalCryptomons < max, "Cannot create any more Cryptomons in this game.");
         require(msg.value == starterCryptomonCost, "Sent eth does not match starter cryptomon cost");
     
@@ -36,7 +37,8 @@ contract CryptomonsGame {
 
         Cryptomon storage starter = cryptomons[totalCryptomons];
         starter.id = totalCryptomons;
-        starter.element = Element.Fire;
+        starter.element = element;
+        starter.name = name;
         starter.health = 80;
         starter.strength = 80;
         starter.owner = owner;
@@ -70,9 +72,10 @@ contract CryptomonsGame {
 
     function getCryptomon(uint id)
         public view
-        returns (Element element, uint health, uint strength, address owner) {
+        returns (string memory name, Element element, uint health, uint strength, address owner) {
         require(id < totalCryptomons, "Cryptomon does not exist.");
         Cryptomon memory cryptomon = cryptomons[id];
+        name = cryptomon.name;
         element = cryptomon.element;
         health = cryptomon.health;
         strength = cryptomon.strength;

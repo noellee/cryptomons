@@ -44,8 +44,7 @@ export default class CryptomonGame {
   async getAllCryptomons(owner: string): Promise<Cryptomon[]> {
     const ids = await this.getCryptomonIds(owner);
     const promises = ids.map(id => this._contract.methods.getCryptomon(id).call());
-    return (await Promise.all(promises))
-      .map(({ id, element, health, strength }) => new Cryptomon(id, element, health, strength));
+    return (await Promise.all(promises)).map(Cryptomon.fromResult);
   }
 
   async initStarterCryptomon(name: string, element: CryptomonElement): Promise<void> {
