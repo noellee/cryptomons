@@ -18,7 +18,7 @@ import { Prop, Vue } from 'vue-property-decorator';
 import { Cryptomon, CryptomonElement } from '@/game';
 
 @Component
-export default class CryptomonList extends Vue {
+export default class CryptomonCard extends Vue {
   @Prop(Cryptomon) cryptomon!: Cryptomon;
 
   public get image() {

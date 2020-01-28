@@ -1,5 +1,6 @@
 <template>
   <div id="app">
+    <AccountBalance v-if="isReady()" />
     <h1>Cryptomons!</h1>
     <h3><i>Gotta catch'em all</i></h3>
     <div id="nav">
@@ -15,8 +16,11 @@
 import { Component, Vue } from 'vue-property-decorator';
 import Actions from '@/store/actions';
 import Getters from '@/store/getters';
+import AccountBalance from '@/components/AccountBalance.vue';
 
-@Component
+@Component({
+  components: { AccountBalance },
+})
 export default class HelloWorld extends Vue {
   beforeCreate() {
     this.$store.dispatch(Actions.InitApp);
