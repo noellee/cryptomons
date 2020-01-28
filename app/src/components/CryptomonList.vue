@@ -1,8 +1,8 @@
 <template>
-  <div>
+  <div class="cryptomon-list">
     <CryptomonCard
       v-for="cryptomon in cryptomons"
-      v-bind:key="cryptomon.health"
+      v-bind:key="cryptomon.id"
       :cryptomon="cryptomon"
     />
   </div>

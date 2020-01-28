@@ -9,6 +9,8 @@ export default class CryptomonGame {
 
   private _contract: Contract;
 
+  private _starterCost: number | undefined;
+
   constructor(web3: Web3) {
     this._web3 = web3;
     this._contract = getContract(this._web3);
@@ -22,23 +24,37 @@ export default class CryptomonGame {
     return account;
   }
 
+  async getStarterCryptomonCost() {
+    if (this._starterCost === undefined) {
+      this._starterCost = await this._contract.methods.starterCryptomonCost().call();
+    }
+    return this._starterCost;
+  }
+
   async getCryptomonCount(owner: string): Promise<number> {
-    return this._contract.methods.getCryptomonCount(owner).call();
+    return this._contract.methods.getCryptomonCountByOwner(owner).call();
+  }
+
+  async getCryptomonIds(owner: string): Promise<number[]> {
+    const ids: string[] = await this._contract.methods.getCryptomonIdsByOwner(owner).call();
+    return ids.map(id => +id);
   }
 
   async getAllCryptomons(owner: string): Promise<Cryptomon[]> {
-    const count = await this.getCryptomonCount(owner);
-    const promises = [];
-    for (let i = 0; i < count; i++) {
-      const promise = this._contract.methods.getCryptomon(owner, i).call();
-      promises.push(promise);
-    }
+    const ids = await this.getCryptomonIds(owner);
+    const promises = ids.map(id => this._contract.methods.getCryptomon(id).call());
     return (await Promise.all(promises))
-      .map(({ element, health, strength }) => new Cryptomon(element, health, strength));
+      .map(({ id, element, health, strength }) => new Cryptomon(id, element, health, strength));
   }
 
-  async initStarterCryptomons(): Promise<void> {
+  async initStarterCryptomon(): Promise<void> {
+    const value = await this.getStarterCryptomonCost();
     const from = this.defaultAccount;
-    await this._contract.methods.initStarterCryptomons().send({ from });
+    await this._contract.methods.initStarterCryptomon().send({ from, value });
+  }
+
+  async isOwnerInitialized(ownerAddr?: string) {
+    const owner = ownerAddr ?? this.defaultAccount;
+    return this._contract.methods.isOwnerInitialized(owner).call();
   }
 }

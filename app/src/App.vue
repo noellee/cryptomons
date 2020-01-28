@@ -34,6 +34,8 @@ body {
 }
 
 #app {
+  width: 90%;
+  margin: 0 auto;
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -52,5 +54,25 @@ body {
 
 #nav a.router-link-exact-active {
   color: #42b983;
+}
+
+button {
+  background: #42b983;
+  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  font-size: medium;
+  font-weight: bold;
+  color:  white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #43c891;
+}
+
+button:active, button:focus {
+  outline: none;
 }
 </style>

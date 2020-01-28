@@ -1,4 +1,5 @@
 enum Getters {
+  OwnerIsInitialized = 'ownerIsInitialized',
   IsWeb3Available = 'isWeb3Available',
   GetCryptomons = 'getCryptomons',
   DefaultAccount = 'defaultAccount',

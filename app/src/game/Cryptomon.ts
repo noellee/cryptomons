@@ -9,16 +9,23 @@ enum Element {
 export default class Cryptomon {
   public static Element = Element;
 
+  private _id: number;
+
   private _health: number;
 
   private _strength: number;
 
   private _element: Element;
 
-  constructor(element: Element, health: number, strength: number) {
+  constructor(id: number, element: Element, health: number, strength: number) {
+    this._id = id;
     this._health = health;
     this._strength = strength;
     this._element = element;
+  }
+
+  public get id(): number {
+    return this._id;
   }
 
   public get element(): Element {

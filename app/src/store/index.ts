@@ -9,6 +9,7 @@ import { Cryptomon, CryptomonGame } from '@/game';
 Vue.use(Vuex);
 
 interface RootState {
+  ownerIsInitialized: boolean
   cryptomons: Record<string, Cryptomon[]>
   web3: Web3 | null
   game: CryptomonGame | null
@@ -16,6 +17,7 @@ interface RootState {
 
 export default new Vuex.Store<RootState>({
   state: {
+    ownerIsInitialized: false,
     cryptomons: {},
     web3: null,
     game: null,
@@ -25,8 +27,12 @@ export default new Vuex.Store<RootState>({
     [Getters.GetCryptomons]: state => (owner: string) => state.cryptomons[owner] ?? [],
     [Getters.IsWeb3Available]: state => () => state.web3 !== null,
     [Getters.DefaultAccount]: state => state.game?.defaultAccount,
+    [Getters.OwnerIsInitialized]: state => state.ownerIsInitialized,
   },
   mutations: {
+    updateOwnerStatus: (state, isInitialized: boolean) => {
+      state.ownerIsInitialized = isInitialized;
+    },
     updateCryptomons: (state, payload: { owner: string, cryptomons: Cryptomon[]}) => {
       state.cryptomons = {
         ...state.cryptomons,
@@ -39,6 +45,11 @@ export default new Vuex.Store<RootState>({
     },
   },
   actions: {
+    [Actions.FetchOwnerStatus]: async ({ state, commit }) => {
+      if (!state.game) throw new TypeError();
+      const isInitialized = await state.game.isOwnerInitialized();
+      commit('updateOwnerStatus', isInitialized);
+    },
     [Actions.FetchCryptomons]: async ({ state, commit }, owner: string | undefined) => {
       if (!state.game) throw new TypeError();
       const ownerAddr = owner || state.game.defaultAccount;
@@ -54,9 +65,10 @@ export default new Vuex.Store<RootState>({
         commit('loadWeb3', web3);
       }
     },
-    [Actions.InitStarterCryptomons]: async ({ state }) => {
+    [Actions.InitStarterCryptomon]: async ({ state, commit }) => {
       if (!state.game) throw new TypeError();
-      await state.game.initStarterCryptomons();
+      await state.game.initStarterCryptomon();
+      commit('updateOwnerStatus', true);
     },
   },
   modules: {

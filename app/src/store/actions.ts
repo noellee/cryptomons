@@ -1,7 +1,8 @@
 enum Actions {
+  FetchOwnerStatus = 'fetchOwnerStatus',
   InitApp = 'initApp',
   FetchCryptomons = 'fetchCryptomons',
-  InitStarterCryptomons = 'initStarterCryptomons',
+  InitStarterCryptomon = 'initStarterCryptomon',
 }
 
 export default Actions;

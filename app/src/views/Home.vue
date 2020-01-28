@@ -2,14 +2,16 @@
   <div class="home">
     <div v-if="isReady">
       <div v-if="isNewUser">
-        <p>Looks like you're new here!</p>
-        <button v-on:click="initStarterCryptomons()">Get my starter Cryptomons</button>
+        <h3>Looks like you're new here!</h3>
+        <button v-on:click="initStarterCryptomon()">
+          Get my starter Cryptomon ({{starterCost}} ETH)
+        </button>
       </div>
       <div v-else>
         <CryptomonList :cryptomons="allMyCryptomons" />
       </div>
     </div>
-    <h4 v-else>Loading...</h4>
+    <h3 v-else>Loading...</h3>
   </div>
 </template>
 
@@ -22,10 +24,20 @@ import CryptomonList from '@/components/CryptomonList.vue';
   components: { CryptomonList },
 })
 export default class Home extends Vue {
-  created() {
+  starterCost: number | null;
+
+  constructor() {
+    super();
+    this.starterCost = null;
+  }
+
+  async created() {
     if (!this.isReady) {
+      this.$store.dispatch(Actions.FetchOwnerStatus);
       this.$store.dispatch(Actions.FetchCryptomons);
     }
+    const cost = await this.$store.state.game.getStarterCryptomonCost();
+    this.starterCost = this.$store.state.web3.utils.fromWei(cost);
   }
 
   get isReady() {
@@ -41,11 +53,11 @@ export default class Home extends Vue {
   }
 
   get isNewUser() {
-    return this.allMyCryptomons.length === 0;
+    return !this.$store.getters[Getters.OwnerIsInitialized];
   }
 
-  async initStarterCryptomons() {
-    await this.$store.dispatch(Actions.InitStarterCryptomons);
+  async initStarterCryptomon() {
+    await this.$store.dispatch(Actions.InitStarterCryptomon);
     await this.$store.dispatch(Actions.FetchCryptomons);
   }
 }
