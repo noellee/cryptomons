@@ -75,4 +75,18 @@ button:hover {
 button:active, button:focus {
   outline: none;
 }
+
+input {
+  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  font-size: medium;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: none;
+  box-sizing: border-box;
+  background: #f2f2f2;
+}
+
+input:focus {
+  outline-color: #42b983;
+}
 </style>

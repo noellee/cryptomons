@@ -4,7 +4,7 @@ import Web3 from 'web3';
 import { getWeb3 } from '@/utils';
 import Getters from '@/store/getters';
 import Actions from '@/store/actions';
-import { Cryptomon, CryptomonGame } from '@/game';
+import { Cryptomon, CryptomonElement, CryptomonGame } from '@/game';
 
 Vue.use(Vuex);
 
@@ -65,9 +65,10 @@ export default new Vuex.Store<RootState>({
         commit('loadWeb3', web3);
       }
     },
-    [Actions.InitStarterCryptomon]: async ({ state, commit }) => {
+    [Actions.InitStarterCryptomon]: async ({ state, commit },
+      payload: { name: string, element: CryptomonElement }) => {
       if (!state.game) throw new TypeError();
-      await state.game.initStarterCryptomon();
+      await state.game.initStarterCryptomon(payload.name, payload.element);
       commit('updateOwnerStatus', true);
     },
   },

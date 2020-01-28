@@ -1,23 +1,15 @@
-enum Element {
-  Fire,
-  Water,
-  Earth,
-  Electricity,
-  Air,
-}
+import CryptomonElement from './CryptomonElement';
 
 export default class Cryptomon {
-  public static Element = Element;
-
   private _id: number;
 
   private _health: number;
 
   private _strength: number;
 
-  private _element: Element;
+  private _element: CryptomonElement;
 
-  constructor(id: number, element: Element, health: number, strength: number) {
+  constructor(id: number, element: CryptomonElement, health: number, strength: number) {
     this._id = id;
     this._health = health;
     this._strength = strength;
@@ -28,12 +20,12 @@ export default class Cryptomon {
     return this._id;
   }
 
-  public get element(): Element {
+  public get element(): CryptomonElement {
     return this._element;
   }
 
   public get elementAsString(): string {
-    return Element[this.element];
+    return CryptomonElement[this.element];
   }
 
   public get health(): number {

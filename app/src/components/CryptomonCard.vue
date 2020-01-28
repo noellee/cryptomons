@@ -14,7 +14,7 @@
 
 import Component from 'vue-class-component';
 import { Prop, Vue } from 'vue-property-decorator';
-import { Cryptomon } from '@/game';
+import { Cryptomon, CryptomonElement } from '@/game';
 
 @Component
 export default class CryptomonList extends Vue {
@@ -22,15 +22,15 @@ export default class CryptomonList extends Vue {
 
   public get image() {
     switch (+this.cryptomon.element) {
-      case Cryptomon.Element.Fire:
+      case CryptomonElement.Fire:
         return require('@/assets/cryptomon-fire.png');
-      case Cryptomon.Element.Water:
+      case CryptomonElement.Water:
         return require('@/assets/cryptomon-water.png');
-      case Cryptomon.Element.Earth:
+      case CryptomonElement.Earth:
         return require('@/assets/cryptomon-earth.png');
-      case Cryptomon.Element.Electricity:
+      case CryptomonElement.Electricity:
         return require('@/assets/cryptomon-electricity.png');
-      case Cryptomon.Element.Air:
+      case CryptomonElement.Air:
         return require('@/assets/cryptomon-air.png');
       default:
         throw new TypeError('Unknown element');

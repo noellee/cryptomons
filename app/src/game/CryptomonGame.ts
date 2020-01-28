@@ -3,6 +3,7 @@ import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract'; // eslint-disable-line import/no-extraneous-dependencies
 import getContract from '@/contracts/CryptomonsGameContract';
 import Cryptomon from './Cryptomon';
+import CryptomonElement from './CryptomonElement';
 
 export default class CryptomonGame {
   private _web3: Web3;
@@ -47,10 +48,10 @@ export default class CryptomonGame {
       .map(({ id, element, health, strength }) => new Cryptomon(id, element, health, strength));
   }
 
-  async initStarterCryptomon(): Promise<void> {
+  async initStarterCryptomon(name: string, element: CryptomonElement): Promise<void> {
     const value = await this.getStarterCryptomonCost();
     const from = this.defaultAccount;
-    await this._contract.methods.initStarterCryptomon().send({ from, value });
+    await this._contract.methods.initStarterCryptomon(name, element).send({ from, value });
   }
 
   async isOwnerInitialized(ownerAddr?: string) {

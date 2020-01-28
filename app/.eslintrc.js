@@ -13,7 +13,7 @@ module.exports = {
     'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
     'no-underscore-dangle': 'off',
     'no-plusplus': 'off',
-    'object-curly-newline': ["error", { "ObjectPattern": { "minProperties": 5 }}]
+    'object-curly-newline': ['error', { ObjectPattern: { minProperties: 5 } }],
   },
   parserOptions: {
     parser: '@typescript-eslint/parser',
