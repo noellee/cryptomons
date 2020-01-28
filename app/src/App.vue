@@ -1,5 +1,7 @@
 <template>
   <div id="app">
+    <h1>Cryptomons!</h1>
+    <h3><i>Gotta catch'em all</i></h3>
     <div id="nav">
       <router-link to="/">Home</router-link> |
       <router-link to="/about">About</router-link>
@@ -27,12 +29,16 @@ export default class HelloWorld extends Vue {
 </script>
 
 <style>
+body {
+  background: #14191f;
+}
+
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #2c3e50;
+  color: #e1e1e1;
 }
 
 #nav {
@@ -41,7 +47,7 @@ export default class HelloWorld extends Vue {
 
 #nav a {
   font-weight: bold;
-  color: #2c3e50;
+  color: #c1c1c1;
 }
 
 #nav a.router-link-exact-active {

@@ -1,13 +1,12 @@
 <template>
   <div class="home">
-    <h3>{{ account }}</h3>
     <div v-if="isReady">
       <div v-if="isNewUser">
         <p>Looks like you're new here!</p>
         <button v-on:click="initStarterCryptomons()">Get my starter Cryptomons</button>
       </div>
       <div v-else>
-        {{ allMyCryptomons }}
+        <CryptomonList :cryptomons="allMyCryptomons" />
       </div>
     </div>
     <h4 v-else>Loading...</h4>
@@ -18,8 +17,10 @@
 import { Component, Vue } from 'vue-property-decorator';
 import Actions from '@/store/actions';
 import Getters from '@/store/getters';
-
-@Component
+import CryptomonList from '@/components/CryptomonList.vue';
+@Component({
+  components: { CryptomonList },
+})
 export default class Home extends Vue {
   created() {
     if (!this.isReady) {

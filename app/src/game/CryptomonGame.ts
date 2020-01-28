@@ -34,7 +34,7 @@ export default class CryptomonGame {
       promises.push(promise);
     }
     return (await Promise.all(promises))
-      .map(({ health, strength }) => new Cryptomon(health, strength));
+      .map(({ element, health, strength }) => new Cryptomon(element, health, strength));
   }
 
   async initStarterCryptomons(): Promise<void> {
