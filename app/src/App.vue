@@ -4,9 +4,27 @@
       <router-link to="/">Home</router-link> |
       <router-link to="/about">About</router-link>
     </div>
-    <router-view/>
+    <router-view v-if="isReady()"/>
+    <h3 v-else>Loading...</h3>
   </div>
 </template>
+
+<script lang="ts">
+import { Component, Vue } from 'vue-property-decorator';
+import Actions from '@/store/actions';
+import Getters from '@/store/getters';
+
+@Component
+export default class HelloWorld extends Vue {
+  beforeCreate() {
+    this.$store.dispatch(Actions.InitApp);
+  }
+
+  isReady() {
+    return this.$store.getters[Getters.IsWeb3Available]();
+  }
+}
+</script>
 
 <style>
 #app {
