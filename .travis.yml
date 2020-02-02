@@ -1,0 +1,16 @@
+language: node_js
+
+sudo: required
+
+node_js:
+  - 13
+
+before_install:
+  - npm install -g ganache-cli
+
+install:
+  - npm install 
+
+script:
+  - ganache-cli &
+  - truffle test
