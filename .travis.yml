@@ -6,7 +6,7 @@ node_js:
   - 13
 
 before_install:
-  - npm install -g ganache-cli
+  - npm install -g ganache-cli truffle
 
 install:
   - npm install 
