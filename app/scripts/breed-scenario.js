@@ -13,4 +13,7 @@ module.exports = async (web3, contract) => {
 
   console.log('Accepting offer');
   await contract.methods.acceptOffer(0).send({ from: accounts[0], gasLimit: 6721975 });
+
+  console.log('Breeding');
+  await contract.methods.breed(0, 1, 'charkira').send({ from: accounts[2], gasLimit: 6721975 });
 };
