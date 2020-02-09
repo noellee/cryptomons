@@ -21,6 +21,7 @@ enum Actions {
 
   // Sharing
   Share = 'share',
+  EndSharing = 'endSharing',
 }
 
 export default Actions;

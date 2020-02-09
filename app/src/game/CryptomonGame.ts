@@ -140,6 +140,11 @@ export default class CryptomonGame {
     await this._contract.methods.share(id, coOwner).send({ from });
   }
 
+  async endSharing(id: number) {
+    const from = this.defaultAccount;
+    await this._contract.methods.endSharing(id).send({ from });
+  }
+
   // UTILITY METHODS
 
   private _toNumber(bnString: string) {

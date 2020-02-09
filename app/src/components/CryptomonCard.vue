@@ -46,7 +46,7 @@
       dropdown-text="More options"
     >
       <IconButton @click="openBreedDialog" icon="baby">Breed</IconButton>
-      <IconButton @click="openShareDialog" icon="heart-broken" v-if="isOwner">Un-share</IconButton>
+      <IconButton @click="endSharing" icon="heart-broken" v-if="isOwner">Un-share</IconButton>
     </DropdownButtonGroup>
     <div v-else class="actions">
       <IconButton v-if="canBuy" icon="comments-dollar" @click="openMakeOfferDialog">
@@ -129,15 +129,21 @@ export default class CryptomonCard extends Vue {
     return require(`@/assets/cryptomon-${primaryElement}-${secondaryElement}.png`);
   }
 
-  public sell() {
+  public async sell() {
     const { id } = this.cryptomon;
-    this.$store.dispatch(Actions.SellCryptomon, { id });
+    await this.$store.dispatch(Actions.SellCryptomon, { id });
+  }
+
+  public async endSharing() {
+    await this.$store.dispatch(Actions.EndSharing, this.cryptomon.id);
   }
 
   // eslint-disable-next-line class-methods-use-this
   public readyForBattle() {
     // todo
   }
+
+  // Open and closing dialogs
 
   public openMakeOfferDialog() {
     this.isMakeOfferDialogOpened = true;

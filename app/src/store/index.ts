@@ -181,5 +181,10 @@ export default new Vuex.Store<RootState>({
       await state.game.share(payload.id, payload.coOwner);
       dispatch(Actions.FetchCryptomonsByOwner);
     },
+    [Actions.EndSharing]: async ({ state, dispatch }, id: number) => {
+      if (!state.game) throw new TypeError();
+      await state.game.endSharing(id);
+      dispatch(Actions.FetchCryptomonsByOwner);
+    },
   },
 });
