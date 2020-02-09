@@ -56,7 +56,7 @@ export default class StarterCryptomonForm extends Vue {
       element: this.element,
     };
     await this.$store.dispatch(Actions.InitStarterCryptomon, payload);
-    await this.$store.dispatch(Actions.FetchCryptomons);
+    await this.$store.dispatch(Actions.FetchCryptomonsByOwner);
   }
 }
 </script>

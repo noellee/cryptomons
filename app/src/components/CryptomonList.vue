@@ -4,6 +4,7 @@
       v-for="cryptomon in cryptomons"
       v-bind:key="cryptomon.id"
       :cryptomon="cryptomon"
+      :simple="simple"
     />
   </div>
 </template>
@@ -19,5 +20,7 @@ import CryptomonCard from './CryptomonCard.vue';
 })
 export default class CryptomonList extends Vue {
   @Prop(Array) cryptomons!: Cryptomon[];
+
+  @Prop({ default: false }) readonly simple!: boolean;
 }
 </script>

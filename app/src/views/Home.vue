@@ -3,6 +3,7 @@
     <div v-if="isReady">
       <StarterCryptomonForm v-if="isNewUser" />
       <div v-else>
+        <h2>Home of all your Cryptomons</h2>
         <CryptomonList :cryptomons="allMyCryptomons" />
       </div>
     </div>
@@ -24,7 +25,7 @@ export default class Home extends Vue {
   async created() {
     if (!this.isReady) {
       this.$store.dispatch(Actions.FetchOwnerStatus);
-      this.$store.dispatch(Actions.FetchCryptomons);
+      this.$store.dispatch(Actions.FetchCryptomonsByOwner);
     }
   }
 
@@ -37,11 +38,11 @@ export default class Home extends Vue {
   }
 
   get allMyCryptomons() {
-    return this.$store.getters[Getters.GetCryptomons](this.account);
+    return this.$store.getters[Getters.GetCryptomonsByOwner](this.account);
   }
 
   get isNewUser() {
-    return !this.$store.getters[Getters.OwnerIsInitialized];
+    return !this.$store.getters[Getters.IsOwnerInitialized] && this.allMyCryptomons.length === 0;
   }
 }
 </script>

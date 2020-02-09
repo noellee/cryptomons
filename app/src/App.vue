@@ -1,11 +1,13 @@
 <template>
   <div id="app">
     <AccountBalance v-if="isReady()" />
-    <h1>Cryptomons!</h1>
-    <h3><i>Gotta catch'em all</i></h3>
+    <h1>
+      Cryptomons!
+      <i class="tiny">Gotta catch'em all</i>
+    </h1>
     <div id="nav">
       <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
+      <router-link to="/marketplace">Marketplace</router-link>
     </div>
     <router-view v-if="isReady()"/>
     <h3 v-else>Loading...</h3>
@@ -33,6 +35,10 @@ export default class HelloWorld extends Vue {
 </script>
 
 <style>
+.tiny {
+  font-size: 0.5em;
+}
+
 body {
   background: #14191f;
 }
@@ -72,7 +78,28 @@ button {
   cursor: pointer;
 }
 
-button:hover {
+button:disabled {
+  cursor: default;
+  opacity: 0.8;
+}
+
+button.secondary {
+  background: #c1c1c1;
+}
+
+button.secondary:not([disabled]):hover {
+  background: #d4d4d4;
+}
+
+button.bg-red {
+  background: #c33638;
+}
+
+button.bg-red:not([disabled]):hover {
+  background: #d73b3d;
+}
+
+button:not([disabled]):hover {
   background: #43c891;
 }
 

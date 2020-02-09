@@ -3,6 +3,8 @@ pragma solidity >=0.4.21 <0.7.0;
 contract CryptomonsGame {
     enum Element {Fire, Water, Earth, Electricity, Air}
 
+    enum State {Idle, OnSale, InAnOffer}
+
     struct Cryptomon {
         uint id;
         string name;
@@ -10,8 +12,7 @@ contract CryptomonsGame {
         uint health;
         uint strength;
         address owner;
-        bool isOnSale;
-        bool isInAnOffer;
+        State state;
     }
 
     struct Owner {
@@ -28,7 +29,7 @@ contract CryptomonsGame {
     uint public starterCryptomonCost = 1 ether;  // cost of creating a starter cryptomon
 
     uint public totalCryptomons = 0;             // count of all cryptomons
-    uint max = 2 ** 256 - 1;                       // maximum number of cryptomons this game supports
+    uint max = 2 ** 256 - 1;                     // maximum number of cryptomons this game supports
 
     // maps id => cryptomon
     mapping(uint => Cryptomon) public cryptomons;
@@ -39,39 +40,13 @@ contract CryptomonsGame {
     // maps cryptomonId => offers
     mapping(uint => Offer) public offers;
 
-    function initStarterCryptomon(string memory name, Element element) public payable {
-        require(totalCryptomons < max, "Cannot create any more Cryptomons in this game.");
-        require(msg.value == starterCryptomonCost, "Sent eth does not match starter cryptomon cost");
+    /////////////////////////////
+    // MODIFIERS
+    /////////////////////////////
 
-        address owner = msg.sender;
-        require(!owners[owner].isInitialized, "Not a new user.");
-
-        Cryptomon storage starter = cryptomons[totalCryptomons];
-        starter.id = totalCryptomons;
-        starter.element = element;
-        starter.name = name;
-        starter.health = 80;
-        starter.strength = 80;
-        starter.owner = owner;
-        starter.isOnSale = false;
-        starter.isInAnOffer = false;
-        owners[owner].isInitialized = true;
-        owners[owner].cryptomonIds.push(starter.id);
-        totalCryptomons++;
-
-        emit StarterCryptomonCreated(starter.id);
-    }
-
-    function isOwnerInitialized(address owner) public view returns (bool) {
-        return owners[owner].isInitialized;
-    }
-
-    function getCryptomonCountByOwner(address owner) public view returns (uint) {
-        return owners[owner].cryptomonIds.length;
-    }
-
-    function getCryptomonIdsByOwner(address owner) public view returns (uint[] memory ids) {
-        ids = owners[owner].cryptomonIds;
+    modifier isIdle(uint cryptomonId) {
+        require(cryptomons[cryptomonId].state == State.Idle, "Cryptomon must be in idle state.");
+        _;
     }
 
     modifier onlyOwner(uint cryptomonId) {
@@ -88,23 +63,70 @@ contract CryptomonsGame {
     }
 
     modifier isUnderOffer(uint cryptomonId) {
-        require(cryptomons[cryptomonId].isOnSale, "Cryptomon is not on sale");
+        require(cryptomons[cryptomonId].state == State.OnSale, "Cryptomon is not on sale");
         require(offers[cryptomonId].buyer != address(0x0), "There is no offer for this Cryptomon.");
         _;
     }
 
-    function sell(uint id) public cryptomonExists(id) onlyOwner(id) {
-        require(!cryptomons[id].isOnSale, "Cryptomon is already on sale.");
-        require(!cryptomons[id].isInAnOffer, "Cannot sell a Cryptomon that's in an offer");
-        cryptomons[id].isOnSale = true;
-        
+    /////////////////////////////
+    // PUBLIC API: GETTERS
+    /////////////////////////////
+
+    function isOwnerInitialized(address owner) public view returns (bool) {
+        return owners[owner].isInitialized;
+    }
+
+    function getCryptomonCountByOwner(address owner) public view returns (uint) {
+        return owners[owner].cryptomonIds.length;
+    }
+
+    function getCryptomonIdsByOwner(address owner) public view returns (uint[] memory ids) {
+        ids = owners[owner].cryptomonIds;
+    }
+
+    function getOfferedCryptomonsCount(uint id) public view returns (uint count) {
+        count = offers[id].cryptomonIds.length;
+    }
+
+    function getOfferedCryptomonByIndex(uint id, uint index) public view returns (uint cryptomonId) {
+        require(index < offers[id].cryptomonIds.length, "Index out of bounds.");
+        cryptomonId = offers[id].cryptomonIds[index];
+    }
+
+    /////////////////////////////
+    // PUBLIC API: INIT STARTER
+    /////////////////////////////
+
+    function initStarterCryptomon(string memory name, Element element) public payable {
+        require(msg.value == starterCryptomonCost, "Sent eth does not match starter cryptomon cost");
+
+        address owner = msg.sender;
+        require(!owners[owner].isInitialized, "Not a new user.");
+
+        Cryptomon storage starter = createCryptomon(owner, element, name, 80, 80);
+
+        owners[owner].isInitialized = true;
+        emit StarterCryptomonCreated(starter.id);
+    }
+
+    /////////////////////////////
+    // PUBLIC API: TRADING
+    /////////////////////////////
+
+    /// @notice Puts a Cryptomon up for sale
+    /// @param id The id of the Cryptomon to sell
+    function sell(uint id) public cryptomonExists(id) onlyOwner(id) isIdle(id) {
+        cryptomons[id].state = State.OnSale;
         emit CryptomonPutOnSale(id);
     }
 
+    /// @notice Make an offer to buy a Cryptomon. The value sent is the offered price.
+    /// @param cryptomonId The id of the Cryptomon to buy
+    /// @param cryptomonIds The ids of the buyer's Cryptomons to be offered to exchange for the seller's Cryptomon
     function makeOffer(uint cryptomonId, uint[] memory cryptomonIds)
-        public cryptomonExists(cryptomonId) payable {
+    public cryptomonExists(cryptomonId) payable {
 
-        require(cryptomons[cryptomonId].isOnSale, "Cryptomon is not on sale.");
+        require(cryptomons[cryptomonId].state == State.OnSale, "Cryptomon is not on sale.");
         require(cryptomons[cryptomonId].owner != msg.sender, "Cannot make an offer for your own Cryptomon.");
         require(offers[cryptomonId].buyer == address(0x0), "An offer has already been made for this Cryptomon");
 
@@ -114,19 +136,142 @@ contract CryptomonsGame {
                 "All Cryptomons in the offer must be owned by the buyer."
             );
             require(
-                !cryptomons[cryptomonIds[i]].isInAnOffer,
-                "All Cryptomons in the offer must not be in any other offers"
+                cryptomons[cryptomonIds[i]].state == State.Idle,
+                "All Cryptomons in the offer must be idle."
             );
-            cryptomons[cryptomonIds[i]].isInAnOffer = true;
+            cryptomons[cryptomonIds[i]].state = State.InAnOffer;
         }
 
         Offer storage offer = offers[cryptomonId];
         offer.buyer = msg.sender;
         offer.price = msg.value;
         offer.cryptomonIds = cryptomonIds;
-        
+
         emit OfferMade(cryptomonId);
     }
+
+    /// @notice Accept an offer that has been made to a Cryptomon. Only the owner of the Cryptomon can call this.
+    /// @param cryptomonId The id of the Cryptomon to accept the offer for
+    function acceptOffer(uint cryptomonId)
+    public cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isUnderOffer(cryptomonId) {
+
+        address seller = msg.sender;
+
+        Offer memory offer = offers[cryptomonId];
+        delete offers[cryptomonId];
+
+        // not on sale any more
+        cryptomons[cryptomonId].state = State.Idle;
+
+        // the cryptomon under offer is transferred to the buyer
+        transferOwnership(cryptomonId, offer.buyer);
+
+        // buyer's cryptomons gets sent to seller
+        for (uint i = 0; i < offer.cryptomonIds.length; i++) {
+            transferOwnership(offer.cryptomonIds[i], seller);
+            cryptomons[offer.cryptomonIds[i]].state = State.Idle;
+        }
+
+        // buyer's deposit gets sent to seller
+        (bool success,) = seller.call.value(offer.price)("");
+        require(success, "Funds transfer did not succeed.");
+
+        emit OfferAccepted(cryptomonId);
+    }
+
+    /// @notice Reject an offer that has been made to a Cryptomon. Only the owner of the Cryptomon can call this.
+    /// @param cryptomonId The id of the Cryptomon to reject the offer for
+    function rejectOffer(uint cryptomonId)
+    public cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isUnderOffer(cryptomonId) {
+        cancelOffer(cryptomonId);
+        emit OfferRejected(cryptomonId);
+    }
+
+    /// @notice Withdraw an offer that has been made to a Cryptomon. Only the buyer can call this.
+    /// @param cryptomonId The id of the Cryptomon to withdraw the offer for
+    function withdrawOffer(uint cryptomonId)
+    public cryptomonExists(cryptomonId) isUnderOffer(cryptomonId) {
+        require(offers[cryptomonId].buyer == msg.sender, "Only the buyer can withdraw an offer.");
+        cancelOffer(cryptomonId);
+        emit OfferWithdrawn(cryptomonId);
+    }
+
+    /////////////////////////////
+    // PUBLIC API: BREEDING
+    /////////////////////////////
+
+    function breed(uint parent1Id, uint parent2Id, string memory name)
+    public
+    cryptomonExists(parent1Id) onlyOwner(parent1Id) isIdle(parent1Id)
+    cryptomonExists(parent2Id) onlyOwner(parent2Id) isIdle(parent2Id) {
+        uint health = (cryptomons[parent1Id].health + cryptomons[parent2Id].health) / 2 + 10;
+        uint strength = (cryptomons[parent1Id].strength + cryptomons[parent2Id].strength) / 2 + 10;
+        Cryptomon storage cryptomon = createCryptomon(msg.sender, cryptomons[parent1Id].element, name, health, strength);
+        emit CryptomonBirth(cryptomon.id);
+    }
+
+    /////////////////////////////
+    // PUBLIC API: BATTLE
+    /////////////////////////////
+
+    //    function readyToBattle() {
+    //        
+    //    }
+    //    
+    //    function pickFight() {
+    //
+    //    }
+
+    /////////////////////////////
+    // PUBLIC API: SHARING
+    /////////////////////////////
+
+    //    function share() {
+    //        
+    //    }
+
+    /////////////////////////////
+    // INTERNAL FUNCTIONS
+    /////////////////////////////
+
+    function transferOwnership(uint cryptomonId, address to) private {
+        address from = cryptomons[cryptomonId].owner;
+        cryptomons[cryptomonId].owner = to;
+        owners[to].cryptomonIds.push(cryptomonId);
+        deleteElementFromArray(owners[from].cryptomonIds, cryptomonId);
+    }
+
+    function createCryptomon(address owner, Element element, string memory name, uint health, uint strength)
+    private returns (Cryptomon storage cryptomon) {
+        require(totalCryptomons < max, "Cannot create any more Cryptomons in this game.");
+        cryptomon = cryptomons[totalCryptomons];
+        cryptomon.id = totalCryptomons;
+        cryptomon.owner = owner;
+        cryptomon.element = element;
+        cryptomon.name = name;
+        cryptomon.health = health;
+        cryptomon.strength = strength;
+        owners[owner].cryptomonIds.push(cryptomon.id);
+        totalCryptomons++;
+    }
+
+    function cancelOffer(uint cryptomonId) private {
+        Offer memory offer = offers[cryptomonId];
+        delete offers[cryptomonId];
+
+        // buyer's cryptomons are no longer in an offer
+        for (uint i = 0; i < offer.cryptomonIds.length; i++) {
+            cryptomons[offer.cryptomonIds[i]].state = State.Idle;
+        }
+
+        // refund buyer's deposit
+        (bool success,) = offer.buyer.call.value(offer.price)("");
+        require(success, "Funds transfer did not succeed.");
+    }
+
+    /////////////////////////////
+    // MISC HELPERS
+    /////////////////////////////
 
     function findIndex(uint[] storage array, uint element) private view returns (uint) {
         for (uint i = 0; i < array.length; i++) {
@@ -145,66 +290,9 @@ contract CryptomonsGame {
         array.length--;
     }
 
-    function transferOwnership(uint cryptomonId, address to) private {
-        address from = cryptomons[cryptomonId].owner;
-        cryptomons[cryptomonId].owner = to;
-        owners[to].cryptomonIds.push(cryptomonId);
-        deleteElementFromArray(owners[from].cryptomonIds, cryptomonId);
-    }
-
-    function acceptOffer(uint cryptomonId)
-        public cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isUnderOffer(cryptomonId) {
-
-        address seller = msg.sender;
-
-        Offer memory offer = offers[cryptomonId];
-        delete offers[cryptomonId];
-
-        // not on sale any more
-        cryptomons[cryptomonId].isOnSale = false;
-
-        // the cryptomon under offer is transferred to the buyer
-        transferOwnership(cryptomonId, offer.buyer);
-
-        // buyer's cryptomons gets sent to seller
-        for (uint i = 0; i < offer.cryptomonIds.length; i++) {
-            transferOwnership(offer.cryptomonIds[i], seller);
-            cryptomons[offer.cryptomonIds[i]].isInAnOffer = false;
-        }
-
-        // buyer's deposit gets sent to seller
-        (bool success,) = seller.call.value(offer.price)("");
-        require(success, "Funds transfer did not succeed.");
-        
-        emit OfferAccepted(cryptomonId);
-    }
-
-    function cancelOffer(uint cryptomonId) private {
-        Offer memory offer = offers[cryptomonId];
-        delete offers[cryptomonId];
-
-        // buyer's cryptomons are no longer in an offer
-        for (uint i = 0; i < offer.cryptomonIds.length; i++) {
-            cryptomons[offer.cryptomonIds[i]].isInAnOffer = false;
-        }
-
-        // refund buyer's deposit
-        (bool success,) = offer.buyer.call.value(offer.price)("");
-        require(success, "Funds transfer did not succeed.");
-    }
-
-    function rejectOffer(uint cryptomonId)
-        public cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isUnderOffer(cryptomonId) {
-        cancelOffer(cryptomonId);
-        emit OfferRejected(cryptomonId);
-    }
-
-    function withdrawOffer(uint cryptomonId)
-        public cryptomonExists(cryptomonId) isUnderOffer(cryptomonId) {
-        require(offers[cryptomonId].buyer == msg.sender, "Only the buyer can withdraw an offer.");
-        cancelOffer(cryptomonId);
-        emit OfferWithdrawn(cryptomonId);
-    }
+    /////////////////////////////
+    // EVENTS
+    /////////////////////////////
 
     event StarterCryptomonCreated(uint id);
     event OfferMade(uint id);
@@ -212,4 +300,5 @@ contract CryptomonsGame {
     event OfferRejected(uint id);
     event OfferWithdrawn(uint id);
     event CryptomonPutOnSale(uint id);
+    event CryptomonBirth(uint id);
 }

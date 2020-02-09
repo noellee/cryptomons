@@ -1,4 +1,4 @@
-const { CryptomonElement } = require('./utils.js');
+const { CryptomonElement, CryptomonState } = require('./utils.js');
 
 const CryptomonsGame = artifacts.require('CryptomonsGame');
 
@@ -19,7 +19,7 @@ contract('CryptomonsGame trade', accounts => {
   it('seller should be able to sell owned cryptomon', async () => {
     await contract.sell(pikaId, { from: seller });
     const pika = await contract.cryptomons(pikaId);
-    assert(pika.isOnSale);
+    assert.equal(pika.state, CryptomonState.OnSale);
   });
 
   describe('offer interaction', async () => {
@@ -30,7 +30,7 @@ contract('CryptomonsGame trade', accounts => {
       let char = await contract.cryptomons(charId);
       assert.equal(offer.buyer, buyer);
       assert.equal(offer.price.toNumber(), 100);
-      assert(char.isInAnOffer);
+      assert.equal(char.state, CryptomonState.InAnOffer);
     });
 
     it('seller should be able to reject offers', async () => {
@@ -41,9 +41,9 @@ contract('CryptomonsGame trade', accounts => {
       const pika = await contract.cryptomons(pikaId);
       const char = await contract.cryptomons(charId);
       assert.equal(pika.owner, seller);
-      assert(pika.isOnSale);  // still on sale
+      assert.equal(pika.state, CryptomonState.OnSale);  // still on sale
       assert.equal(char.owner, buyer);
-      assert(!char.isInAnOffer);
+      assert.equal(char.state, CryptomonState.Idle);
       
       // refund
       assert(buyerBalanceAfter.sub(buyerBalanceBefore).toString(), '100');
@@ -57,9 +57,9 @@ contract('CryptomonsGame trade', accounts => {
       const pika = await contract.cryptomons(pikaId);
       const char = await contract.cryptomons(charId);
       assert.equal(pika.owner, seller);
-      assert(pika.isOnSale);  // still on sale
+      assert.equal(pika.state, CryptomonState.OnSale);  // still on sale
       assert.equal(char.owner, buyer);
-      assert(!char.isInAnOffer);
+      assert.equal(char.state, CryptomonState.Idle);
 
       // refund
       const tx = await web3.eth.getTransaction(withdrawOfferTx.tx);
@@ -89,9 +89,9 @@ contract('CryptomonsGame trade', accounts => {
       const pika = await contract.cryptomons(pikaId);
       const char = await contract.cryptomons(charId);
       assert.equal(pika.owner, buyer);
-      assert(!pika.isOnSale);
+      assert.equal(pika.state, CryptomonState.Idle);
       assert.equal(char.owner, seller);
-      assert(!char.isInAnOffer);
+      assert.equal(char.state, CryptomonState.Idle);
 
       const sellerCryptomons = await contract.getCryptomonIdsByOwner(seller);
       const buyerCryptomons = await contract.getCryptomonIdsByOwner(buyer);

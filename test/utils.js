@@ -6,4 +6,9 @@ module.exports = {
     Electricity: 3,
     Air: 4,
   },
+  CryptomonState: {
+    Idle: 0,
+    OnSale: 1,
+    InAnOffer: 2,
+  },
 };

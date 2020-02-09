@@ -1,8 +1,11 @@
 enum Getters {
-  OwnerIsInitialized = 'ownerIsInitialized',
+  GetCryptomonById = 'getCryptomonById',
+  GetCryptomonsByOwner = 'getCryptomonsByOwner',
+  MarketplaceCryptomons = 'marketplaceCryptomons',
+  IsOwnerInitialized = 'isOwnerInitialized',
   IsWeb3Available = 'isWeb3Available',
-  GetCryptomons = 'getCryptomons',
   DefaultAccount = 'defaultAccount',
   HasFetchedForOwner = 'hasFetchedForOwner',
+  HasFetchedMarketplace = 'hasFetchedMarketplace',
 }
 export default Getters;

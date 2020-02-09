@@ -1,51 +1,60 @@
 import CryptomonElement from './CryptomonElement';
+import CryptomonState from './CryptomonState';
+import Offer from './Offer';
 
 export default class Cryptomon {
-  private _id: number;
+  public readonly id: number;
 
-  private _name: string;
+  public readonly name: string;
 
-  private _health: number;
+  public readonly health: number;
 
-  private _strength: number;
+  public readonly strength: number;
 
-  private _element: CryptomonElement;
+  public readonly element: CryptomonElement;
 
-  constructor(id: number, name: string, element: CryptomonElement, health: number,
-    strength: number) {
-    this._id = id;
-    this._name = name;
-    this._health = health;
-    this._strength = strength;
-    this._element = element;
-  }
+  public owner: string;
 
-  public get id(): number {
-    return this._id;
-  }
+  public offer: Offer | null = null;
 
-  public get name(): string {
-    return this._name;
-  }
+  private _state: CryptomonState;
 
-  public get element(): CryptomonElement {
-    return this._element;
+  constructor(id: number, name: string, element: CryptomonElement, state: CryptomonState,
+    health: number, strength: number, owner: string) {
+    this.id = id;
+    this.name = name;
+    this.health = health;
+    this.strength = strength;
+    this.element = element;
+    this._state = state;
+    this.owner = owner;
   }
 
   public get elementAsString(): string {
     return CryptomonElement[this.element];
   }
 
-  public get health(): number {
-    return this._health;
+  public get isInAnOffer(): boolean {
+    return this._state === CryptomonState.InAnOffer;
   }
 
-  public get strength(): number {
-    return this._strength;
+  public get isIdle(): boolean {
+    return this._state === CryptomonState.Idle;
   }
 
-  static fromResult(result: {id: number, name: string, element: CryptomonElement, health: number,
-    strength: number}) {
-    return new Cryptomon(result.id, result.name, result.element, result.health, result.strength);
+  public get isOnSale(): boolean {
+    return this._state === CryptomonState.OnSale;
+  }
+
+  public set isOnSale(value) {
+    this._state = value ? CryptomonState.OnSale : CryptomonState.Idle;
+  }
+
+  static fromResult(result: {id: number, name: string, element: CryptomonElement,
+    state: CryptomonState, health: number, strength: number, owner: string}) {
+    return new Cryptomon(
+      result.id, result.name, result.element, result.state, result.health, result.strength,
+      result.owner,
+    );
   }
 }
