@@ -50,8 +50,8 @@ import { Cryptomon, CryptomonElement } from '@/game';
 import Actions from '@/store/actions';
 import MakeOfferDialog from '@/components/MakeOfferDialog.vue';
 import Getters from '@/store/getters';
-import DropdownButtonGroup from '@/components/DropdownButtonGroup.vue';
-import IconButton from '@/components/IconButton.vue';
+import DropdownButtonGroup from '@/components/generic/DropdownButtonGroup.vue';
+import IconButton from '@/components/generic/IconButton.vue';
 @Component({
   components: {
     IconButton,

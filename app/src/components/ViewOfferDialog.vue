@@ -22,7 +22,7 @@
 import Component from 'vue-class-component';
 import { Prop, Vue } from 'vue-property-decorator';
 import _ from 'lodash';
-import Dialog from '@/components/Dialog.vue';
+import Dialog from '@/components/generic/Dialog.vue';
 import { Cryptomon, Offer } from '@/game';
 import Getters from '@/store/getters';
 import Actions from '@/store/actions';

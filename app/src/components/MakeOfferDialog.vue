@@ -29,7 +29,7 @@
 <script lang="ts">
 import Component from 'vue-class-component';
 import { Prop, Vue } from 'vue-property-decorator';
-import Dialog from '@/components/Dialog.vue';
+import Dialog from '@/components/generic/Dialog.vue';
 import { Cryptomon, Offer } from '@/game';
 import Actions from '@/store/actions';
 import Getters from '@/store/getters';

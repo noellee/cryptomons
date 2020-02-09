@@ -2,7 +2,7 @@
 import Vue from 'vue';
 import Component from 'vue-class-component';
 import { Prop } from 'vue-property-decorator';
-import IconButton from '@/components/IconButton.vue';
+import IconButton from '@/components/generic/IconButton.vue';
 
 @Component
 export default class DropdownButtonGroup extends Vue {
