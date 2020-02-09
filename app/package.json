@@ -7,9 +7,10 @@
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "lint:fix": "vue-cli-service lint --fix",
-    "script:init-starters": "node scripts/init-starters.js",
-    "script:marketplace": "node scripts/marketplace-scenario.js",
-    "script:breed": "node scripts/breed-scenario.js"
+    "scenario:init": "node scripts/runner.js ./init-scenario.js",
+    "scenario:breeding": "node scripts/runner.js ./breed-scenario.js",
+    "scenario:marketplace": "node scripts/runner.js ./marketplace-scenario.js",
+    "scenario:sharing": "node scripts/runner.js ./sharing-scenario.js"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.27",
