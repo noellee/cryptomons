@@ -28,10 +28,11 @@ contract('CryptomonsGame breeding', accounts => {
   });
 
   it('should breed', async () => {
-    const breedTx = await contract.breed(pikaId, charId, 'baby', { from: owner });
+    const breedTx = await contract.breed(pikaId, charId, 'charkira', { from: owner });
     const babyId = breedTx.logs[0].args.id;
     const baby = await contract.cryptomons(babyId);
     const ownedCryptomons = await contract.getCryptomonIdsByOwner(owner);
+    assert.equal(baby.name, 'charkira');
     assert.equal(baby.owner, owner);
     assert.deepInclude(ownedCryptomons, babyId);
   });
