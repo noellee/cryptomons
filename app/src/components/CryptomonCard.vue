@@ -16,10 +16,16 @@
       @cancel="closeViewOfferDialog()"
     />
     <BreedDialog
-      v-if="!simple && isBreedOfferDialogOpened"
+      v-if="!simple && isBreedDialogOpened"
       :cryptomon="cryptomon"
       @breed="closeBreedDialog"
       @cancel="closeBreedDialog"
+    />
+    <ShareDialog
+      v-if="!simple && isShareDialogOpened"
+      :cryptomon="cryptomon"
+      @share="closeShareDialog"
+      @cancel="closeShareDialog"
     />
     <h2>{{ cryptomon.name }}</h2>
     <img :src="image" :alt="cryptomon.primaryElementAsString" width="240px" />
@@ -28,21 +34,31 @@
       <li><span>Health:</span>{{ cryptomon.health }}</li>
       <li><span>Strength:</span>{{ cryptomon.strength }}</li>
     </ul>
-    <DropdownButtonGroup v-if="!simple && isOwner && cryptomon.isIdle" dropdown-text="More options">
-      <IconButton @click="sell()" :icon="['fab', 'ethereum']">Sell</IconButton>
-      <IconButton @click="readyForBattle()" icon="fist-raised">Ready for battle</IconButton>
-      <IconButton @click="openBreedDialog()" icon="baby">Breed</IconButton>
+    <div v-if="!simple">
+    <DropdownButtonGroup v-if="isOwner && cryptomon.isIdle" dropdown-text="More options">
+      <IconButton @click="sell" :icon="['fab', 'ethereum']">Sell</IconButton>
+      <IconButton @click="readyForBattle" icon="fist-raised">Ready for battle</IconButton>
+      <IconButton @click="openBreedDialog" icon="baby">Breed</IconButton>
+      <IconButton @click="openShareDialog" icon="handshake">Share</IconButton>
     </DropdownButtonGroup>
-    <div v-else-if="!simple" class="actions">
-      <IconButton v-if="canBuy" icon="comments-dollar" @click="openMakeOfferDialog()">
+    <DropdownButtonGroup
+      v-else-if="isOwnerOrCoOwner && cryptomon.isShared"
+      dropdown-text="More options"
+    >
+      <IconButton @click="openBreedDialog" icon="baby">Breed</IconButton>
+      <IconButton @click="openShareDialog" icon="heart-broken" v-if="isOwner">Un-share</IconButton>
+    </DropdownButtonGroup>
+    <div v-else class="actions">
+      <IconButton v-if="canBuy" icon="comments-dollar" @click="openMakeOfferDialog">
         Make offer
       </IconButton>
-      <IconButton v-else-if="cryptomon.offer" icon="eye" @click="openViewOfferDialog()">
+      <IconButton v-else-if="cryptomon.offer" icon="eye" @click="openViewOfferDialog">
         View offer
       </IconButton>
       <button v-else-if="cryptomon.isInAnOffer" disabled class="secondary">Is in an offer</button>
       <button v-else-if="cryptomon.isOnSale" disabled class="secondary">Pending offer</button>
       <button v-else disabled class="secondary">Unavailable</button>
+    </div>
     </div>
   </div>
 </template>
@@ -52,17 +68,19 @@ import Component from 'vue-class-component';
 import { Prop, Vue } from 'vue-property-decorator';
 import { Cryptomon, CryptomonElement } from '@/game';
 import Actions from '@/store/actions';
-import MakeOfferDialog from '@/components/MakeOfferDialog.vue';
+import MakeOfferDialog from '@/components/dialogs/MakeOfferDialog.vue';
 import Getters from '@/store/getters';
 import DropdownButtonGroup from '@/components/generic/DropdownButtonGroup.vue';
 import IconButton from '@/components/generic/IconButton.vue';
-import BreedDialog from '@/components/BreedDialog.vue';
+import BreedDialog from '@/components/dialogs/BreedDialog.vue';
+import ShareDialog from '@/components/dialogs/ShareDialog.vue';
 @Component({
   components: {
+    ShareDialog,
     BreedDialog,
     IconButton,
     DropdownButtonGroup,
-    ViewOfferDialog: () => import('@/components/ViewOfferDialog.vue'),
+    ViewOfferDialog: () => import('@/components/dialogs/ViewOfferDialog.vue'),
     MakeOfferDialog,
   },
 })
@@ -75,10 +93,20 @@ export default class CryptomonCard extends Vue {
 
   isViewOfferDialogOpened: boolean = false;
 
-  isBreedOfferDialogOpened: boolean = false;
+  isBreedDialogOpened: boolean = false;
+
+  isShareDialogOpened: boolean = false;
+
+  get defaultAccount() {
+    return this.$store.getters[Getters.DefaultAccount];
+  }
 
   public get isOwner() {
-    return this.cryptomon.owner === this.$store.getters[Getters.DefaultAccount];
+    return this.cryptomon.owner === this.defaultAccount;
+  }
+
+  public get isOwnerOrCoOwner() {
+    return this.isOwner || this.cryptomon.coOwner === this.defaultAccount;
   }
 
   public get canBuy() {
@@ -128,11 +156,19 @@ export default class CryptomonCard extends Vue {
   }
 
   public openBreedDialog() {
-    this.isBreedOfferDialogOpened = true;
+    this.isBreedDialogOpened = true;
   }
 
   public closeBreedDialog() {
-    this.isBreedOfferDialogOpened = false;
+    this.isBreedDialogOpened = false;
+  }
+
+  public openShareDialog() {
+    this.isShareDialogOpened = true;
+  }
+
+  public closeShareDialog() {
+    this.isShareDialogOpened = false;
   }
 }
 </script>
@@ -171,13 +207,13 @@ export default class CryptomonCard extends Vue {
     display: inline-block;
   }
 
-  .cryptomon-card > .actions {
+  .cryptomon-card .actions {
     width: 100%;
     display: flex;
     margin-top: 8px;
   }
 
-  .cryptomon-card > .actions button {
+  .cryptomon-card .actions button {
     flex-grow: 1;
   }
 </style>

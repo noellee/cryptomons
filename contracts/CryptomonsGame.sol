@@ -122,7 +122,7 @@ contract CryptomonsGame {
         ids = owners[owner].cryptomonIds;
     }
 
-    function getCoOwnedCryptomonIds(address coOwner) public view returns (uint[] memory ids) {
+    function getCryptomonIdsByCoOwner(address coOwner) public view returns (uint[] memory ids) {
         ids = coOwners[coOwner];
     }
 
@@ -273,8 +273,9 @@ contract CryptomonsGame {
     /////////////////////////////
 
     function share(uint cryptomonId, address to)
-    external cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isIdle(cryptomonId) isNotShared(cryptomonId) {
-        require(to != address(0x0), "Cannot share to empty address.");
+    external cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isIdle(cryptomonId) {
+        require(to != address(0x0), "Cannot share with empty address.");
+        require(to != msg.sender, "Cannot share with yourself.");
         cryptomons[cryptomonId].coOwner = to;
         cryptomons[cryptomonId].state = State.Shared;
         coOwners[to].push(cryptomonId);

@@ -6,6 +6,7 @@ enum Actions {
   FetchOwnerStatus = 'fetchOwnerStatus',
   FetchCryptomonsById = 'fetchCryptomonsById',
   FetchCryptomonsByOwner = 'fetchCryptomonsByOwner',
+  FetchCryptomonsByCoOwner = 'fetchCryptomonsByCoOwner',
   FetchMarketplaceCryptomons = 'fetchMarketplaceCryptomons',
 
   // Trading
@@ -16,7 +17,10 @@ enum Actions {
   WithdrawOffer = 'withdrawOffer',
 
   // Breed
-  Breed = 'breed'
+  Breed = 'breed',
+
+  // Sharing
+  Share = 'share',
 }
 
 export default Actions;

@@ -38,8 +38,20 @@ export default class CryptomonGame {
     return ids.map(id => +id);
   }
 
+  async getCryptomonIdsByCoOwner(coOwner: string): Promise<number[]> {
+    const ids: string[] = await this._contract.methods.getCryptomonIdsByCoOwner(coOwner).call();
+    return ids.map(id => +id);
+  }
+
   async getCryptomonsByOwner(owner: string): Promise<Cryptomon[]> {
     const ids = await this.getCryptomonIds(owner);
+    return this.getCryptomonsByIds(ids);
+  }
+
+  async getCryptomonsByCoOwner(coOwner: string): Promise<Cryptomon[]> {
+    console.log('here');
+    const ids = await this.getCryptomonIdsByCoOwner(coOwner);
+    console.log('ids', ids);
     return this.getCryptomonsByIds(ids);
   }
 
@@ -117,6 +129,15 @@ export default class CryptomonGame {
   async breed(parent1: number, parent2: number, name: string) {
     const from = this.defaultAccount;
     await this._contract.methods.breed(parent1, parent2, name).send({ from });
+  }
+
+  // ///////////////////////////
+  // Sharing
+  // ///////////////////////////
+
+  async share(id: number, coOwner: string) {
+    const from = this.defaultAccount;
+    await this._contract.methods.share(id, coOwner).send({ from });
   }
 
   // UTILITY METHODS

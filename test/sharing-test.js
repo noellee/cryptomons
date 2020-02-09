@@ -23,6 +23,13 @@ contract('CryptomonsGame sharing', accounts => {
     charId = charTx.logs[0].args.id.toNumber();
   });
 
+  it('owner should not be able to share with themselves', async () => {
+    const tryToShare = async () => {
+      await contract.share(pikaId, owner, { from: owner });
+    };
+    assertThrowsAsync(tryToShare, /revert/);
+  });
+
   it('owner should be able to share', async () => {
     await contract.share(pikaId, coOwner, { from: owner });
     const pika = await contract.cryptomons(pikaId);
@@ -33,7 +40,7 @@ contract('CryptomonsGame sharing', accounts => {
     const pika = await contract.cryptomons(pikaId);
     assert.equal(pika.coOwner, coOwner);
 
-    const coOwned = await contract.getCoOwnedCryptomonIds(coOwner);
+    const coOwned = await contract.getCryptomonIdsByCoOwner(coOwner);
     assert.deepEqual(coOwned.map(id => id.toNumber()), [pikaId]);
   });
 
@@ -64,6 +71,20 @@ contract('CryptomonsGame sharing', accounts => {
     // todo
   });
 
+  it('cannot be shared again by owner', async () => {
+    const tryToShare = async () => {
+      await contract.share(pikaId, accounts[3], { from: owner });
+    };
+    assertThrowsAsync(tryToShare, /revert/);
+  });
+
+  it('cannot be shared by co-owner', async () => {
+    const tryToShare = async () => {
+      await contract.share(pikaId, accounts[3], { from: coOwner });
+    };
+    assertThrowsAsync(tryToShare, /revert/);
+  });
+
   it('owner should be able to revoke co-ownership', async () => {
     await contract.endSharing(pikaId, { from: owner });
 
@@ -71,7 +92,7 @@ contract('CryptomonsGame sharing', accounts => {
     assert(web3.utils.toBN(pika.coOwner).isZero());
     assert.equal(pika.state, CryptomonState.Idle);
 
-    const coOwned = await contract.getCoOwnedCryptomonIds(coOwner);
+    const coOwned = await contract.getCryptomonIdsByCoOwner(coOwner);
     assert.deepEqual(coOwned, []);
   });
 });

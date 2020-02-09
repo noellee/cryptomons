@@ -34,6 +34,9 @@ export default new Vuex.Store<RootState>({
     [Getters.GetCryptomonsByOwner]: state => (owner: string) => (
       _.filter(state.cryptomons, c => c.owner === owner)
     ),
+    [Getters.GetCryptomonsByCoOwner]: state => (coOwner: string) => (
+      _.filter(state.cryptomons, c => c.coOwner === coOwner)
+    ),
     [Getters.MarketplaceCryptomons]: state => _.values(state.cryptomons).filter(c => c.isOnSale),
     [Getters.IsWeb3Available]: state => () => state.web3 !== null,
     [Getters.IsOwnerInitialized]: state => state.ownerIsInitialized,
@@ -109,6 +112,12 @@ export default new Vuex.Store<RootState>({
       commit('updateCryptomons', { cryptomons });
       commit('addFetchedOwner', { owner: ownerAddr });
     },
+    [Actions.FetchCryptomonsByCoOwner]: async ({ state, commit }, coOwner: string | undefined) => {
+      if (!state.game) throw new TypeError();
+      const coOwnerAddr = coOwner || state.game.defaultAccount;
+      const cryptomons = await state.game.getCryptomonsByCoOwner(coOwnerAddr);
+      commit('updateCryptomons', { cryptomons });
+    },
     [Actions.FetchMarketplaceCryptomons]: async ({ state, commit }) => {
       if (!state.game) throw new TypeError();
       const cryptomons = await state.game.getMarketplaceCryptomons(20);
@@ -159,6 +168,17 @@ export default new Vuex.Store<RootState>({
       payload: { parent1: number, parent2: number, name: string}) => {
       if (!state.game) throw new TypeError();
       await state.game.breed(payload.parent1, payload.parent2, payload.name);
+      dispatch(Actions.FetchCryptomonsByOwner);
+    },
+
+    // ///////////////////////////
+    // Sharing
+    // ///////////////////////////
+
+    [Actions.Share]: async ({ state, dispatch },
+      payload: { id: number, coOwner: string }) => {
+      if (!state.game) throw new TypeError();
+      await state.game.share(payload.id, payload.coOwner);
       dispatch(Actions.FetchCryptomonsByOwner);
     },
   },

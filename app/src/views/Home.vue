@@ -3,8 +3,10 @@
     <div v-if="isReady">
       <StarterCryptomonForm v-if="isNewUser" />
       <div v-else>
-        <h2>Home of all your Cryptomons</h2>
-        <CryptomonList :cryptomons="allMyCryptomons" />
+        <h2>My Cryptomons</h2>
+        <CryptomonList :cryptomons="ownedCryptomons" />
+        <h2>My co-owned Cryptomons</h2>
+        <CryptomonList :cryptomons="coOwnedCryptomons" />
       </div>
     </div>
     <h3 v-else>Loading...</h3>
@@ -26,6 +28,7 @@ export default class Home extends Vue {
     if (!this.isReady) {
       this.$store.dispatch(Actions.FetchOwnerStatus);
       this.$store.dispatch(Actions.FetchCryptomonsByOwner);
+      this.$store.dispatch(Actions.FetchCryptomonsByCoOwner);
     }
   }
 
@@ -37,12 +40,16 @@ export default class Home extends Vue {
     return this.$store.getters[Getters.DefaultAccount];
   }
 
-  get allMyCryptomons() {
+  get ownedCryptomons() {
     return this.$store.getters[Getters.GetCryptomonsByOwner](this.account);
   }
 
+  get coOwnedCryptomons() {
+    return this.$store.getters[Getters.GetCryptomonsByCoOwner](this.account);
+  }
+
   get isNewUser() {
-    return !this.$store.getters[Getters.IsOwnerInitialized] && this.allMyCryptomons.length === 0;
+    return !this.$store.getters[Getters.IsOwnerInitialized] && this.ownedCryptomons.length === 0;
   }
 }
 </script>

@@ -1,6 +1,7 @@
 enum Getters {
   GetCryptomonById = 'getCryptomonById',
   GetCryptomonsByOwner = 'getCryptomonsByOwner',
+  GetCryptomonsByCoOwner = 'getCryptomonsByCoOwner',
   MarketplaceCryptomons = 'marketplaceCryptomons',
   IsOwnerInitialized = 'isOwnerInitialized',
   IsWeb3Available = 'isWeb3Available',

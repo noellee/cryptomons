@@ -17,13 +17,15 @@ export default class Cryptomon {
 
   public owner: string;
 
+  public coOwner: string;
+
   public offer: Offer | null = null;
 
   private _state: CryptomonState;
 
   constructor(id: number, name: string, primaryElement: CryptomonElement,
     secondaryElement: CryptomonElement, state: CryptomonState, health: number, strength: number,
-    owner: string) {
+    owner: string, coOwner: string) {
     this.id = id;
     this.name = name;
     this.health = health;
@@ -32,6 +34,7 @@ export default class Cryptomon {
     this.secondaryElement = secondaryElement;
     this._state = state;
     this.owner = owner;
+    this.coOwner = coOwner;
   }
 
   public get primaryElementAsString(): string {
@@ -58,12 +61,16 @@ export default class Cryptomon {
     this._state = value ? CryptomonState.OnSale : CryptomonState.Idle;
   }
 
+  public get isShared(): boolean {
+    return this._state === CryptomonState.Shared;
+  }
+
   static fromResult(result: {id: number, name: string, primaryElement: CryptomonElement,
     secondaryElement: CryptomonElement, state: CryptomonState, health: number, strength: number,
-    owner: string}) {
+    owner: string, coOwner: string }) {
     return new Cryptomon(
       result.id, result.name, result.primaryElement, result.secondaryElement, result.state,
-      result.health, result.strength, result.owner,
+      result.health, result.strength, result.owner, result.coOwner,
     );
   }
 }
