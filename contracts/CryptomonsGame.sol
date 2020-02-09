@@ -3,7 +3,7 @@ pragma solidity >=0.6.0 <0.7.0;
 contract CryptomonsGame {
     enum Element {Fire, Water, Earth, Electricity, Air}
 
-    enum State {Idle, OnSale, InAnOffer}
+    enum State {Idle, OnSale, InAnOffer, Shared}
 
     struct Cryptomon {
         uint id;
@@ -83,12 +83,26 @@ contract CryptomonsGame {
     }
 
     modifier isShared(uint cryptomonId) {
-        require(cryptomons[cryptomonId].coOwner != address(0x0), "Cryptomon must be currently shared.");
+        require(
+            cryptomons[cryptomonId].state == State.Shared,
+            "Cryptomon must be currently shared."
+        );
         _;
     }
 
     modifier isNotShared(uint cryptomonId) {
-        require(cryptomons[cryptomonId].coOwner == address(0x0), "Cryptomon must not be currently shared.");
+        require(
+            cryptomons[cryptomonId].state != State.Shared,
+            "Cryptomon must not be currently shared."
+        );
+        _;
+    }
+
+    modifier canBreed(uint id) {
+        require(
+            cryptomons[id].state == State.Shared || cryptomons[id].state == State.Idle,
+            "Cryptomon cannot breed right now."
+        );
         _;
     }
 
@@ -232,8 +246,8 @@ contract CryptomonsGame {
 
     function breed(uint parent1Id, uint parent2Id, string calldata name)
     external
-    onlyOwnerOrCoOwner(parent1Id) isIdle(parent1Id)
-    onlyOwnerOrCoOwner(parent2Id) isIdle(parent2Id) {
+    onlyOwnerOrCoOwner(parent1Id) canBreed(parent1Id)
+    onlyOwnerOrCoOwner(parent2Id) canBreed(parent2Id) {
         uint health = (cryptomons[parent1Id].health + cryptomons[parent2Id].health) / 2 + 10;
         uint strength = (cryptomons[parent1Id].strength + cryptomons[parent2Id].strength) / 2 + 10;
         Element pElement = cryptomons[parent1Id].primaryElement;
@@ -262,6 +276,7 @@ contract CryptomonsGame {
     external cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isIdle(cryptomonId) isNotShared(cryptomonId) {
         require(to != address(0x0), "Cannot share to empty address.");
         cryptomons[cryptomonId].coOwner = to;
+        cryptomons[cryptomonId].state = State.Shared;
         coOwners[to].push(cryptomonId);
     }
 
@@ -269,6 +284,7 @@ contract CryptomonsGame {
     external cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isShared(cryptomonId) {
         address coOwner = cryptomons[cryptomonId].coOwner;
         cryptomons[cryptomonId].coOwner = address(0x0);
+        cryptomons[cryptomonId].state = State.Idle;
         deleteElementFromArray(coOwners[coOwner], cryptomonId);
     }
 

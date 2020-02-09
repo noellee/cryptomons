@@ -1,4 +1,4 @@
-const { CryptomonElement } = require('./utils.js');
+const { CryptomonElement, CryptomonState, assertThrowsAsync } = require('./utils.js');
 
 const CryptomonsGame = artifacts.require('CryptomonsGame');
 
@@ -25,6 +25,8 @@ contract('CryptomonsGame sharing', accounts => {
 
   it('owner should be able to share', async () => {
     await contract.share(pikaId, coOwner, { from: owner });
+    const pika = await contract.cryptomons(pikaId);
+    assert.equal(pika.state, CryptomonState.Shared);
   });
 
   it('should have a co-owner', async () => {
@@ -42,12 +44,32 @@ contract('CryptomonsGame sharing', accounts => {
     assert.equal(baby.name, 'sharekira');
     assert.equal(baby.owner, coOwner);
   });
+  
+  it('cannot trade now', async () => {
+    const tryToTrade = async () => {
+      await contract.sell(pikaId, { from: owner });
+    };
+    assertThrowsAsync(tryToTrade, /revert/);
+  });
+
+  it('cannot use in an offer now', async () => {
+    await contract.sell(charId, { from: coOwner });
+    const tryToMakeOffer = async () => {
+      await contract.makeOffer(charId, [pikaId], { from: owner });
+    };
+    assertThrowsAsync(tryToMakeOffer, /revert/);
+  });
+
+  it('cannot fight now', async () => {
+    // todo
+  });
 
   it('owner should be able to revoke co-ownership', async () => {
     await contract.endSharing(pikaId, { from: owner });
 
     const pika = await contract.cryptomons(pikaId);
     assert(web3.utils.toBN(pika.coOwner).isZero());
+    assert.equal(pika.state, CryptomonState.Idle);
 
     const coOwned = await contract.getCoOwnedCryptomonIds(coOwner);
     assert.deepEqual(coOwned, []);
