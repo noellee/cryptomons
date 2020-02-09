@@ -76,19 +76,20 @@ button {
   border: none;
   border-radius: 2px;
   cursor: pointer;
+  position: relative;
 }
 
 button:disabled {
   cursor: default;
-  opacity: 0.8;
+  opacity: 0.5;
 }
 
 button.secondary {
-  background: #c1c1c1;
+  background: #808080;
 }
 
 button.secondary:not([disabled]):hover {
-  background: #d4d4d4;
+  background: #919191;
 }
 
 button.bg-red {

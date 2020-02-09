@@ -93,7 +93,7 @@ export default class CryptomonGame {
     const offer = await this._contract.methods.offers(id).call();
     if (this._isEmptyAddress(offer.buyer)) return null;
     const count = await this._contract.methods.getOfferedCryptomonsCount(id).call();
-    const promises = Array(count)
+    const promises = Array(this._toNumber(count))
       .map((v, i) => this._contract.methods.getOfferedCryptomonByIndex(id, i).call());
     const offeredCryptomons = (await Promise.all(promises)).map(this._toNumber.bind(this));
     return Offer.fromResult({ id, offeredCryptomons, ...offer });

@@ -22,10 +22,18 @@
       <li><span>Health:</span>{{ cryptomon.health }}</li>
       <li><span>Strength:</span>{{ cryptomon.strength }}</li>
     </ul>
-    <div v-if="!simple" class="actions">
-      <button v-if="canSell" v-on:click="sell()">Sell</button>
-      <button v-else-if="canBuy" v-on:click="openMakeOfferDialog()">Buy</button>
-      <button v-else-if="cryptomon.offer" v-on:click="openViewOfferDialog()">View offer</button>
+    <DropdownButtonGroup v-if="!simple && isOwner && cryptomon.isIdle" dropdown-text="More options">
+      <IconButton v-on:click="sell()" :icon="['fab', 'ethereum']">Sell</IconButton>
+      <IconButton v-on:click="readyForBattle()" icon="fist-raised">Ready for battle</IconButton>
+      <IconButton v-on:click="breed()" icon="baby">Breed</IconButton>
+    </DropdownButtonGroup>
+    <div v-else-if="!simple" class="actions">
+      <IconButton v-if="canBuy" icon="comments-dollar" v-on:click="openMakeOfferDialog()">
+        Make offer
+      </IconButton>
+      <IconButton v-else-if="cryptomon.offer" icon="eye" v-on:click="openViewOfferDialog()">
+        View offer
+      </IconButton>
       <button v-else-if="cryptomon.isInAnOffer" disabled class="secondary">Is in an offer</button>
       <button v-else-if="cryptomon.isOnSale" disabled class="secondary">Pending offer</button>
       <button v-else disabled class="secondary">Unavailable</button>
@@ -42,8 +50,15 @@ import { Cryptomon, CryptomonElement } from '@/game';
 import Actions from '@/store/actions';
 import MakeOfferDialog from '@/components/MakeOfferDialog.vue';
 import Getters from '@/store/getters';
+import DropdownButtonGroup from '@/components/DropdownButtonGroup.vue';
+import IconButton from '@/components/IconButton.vue';
 @Component({
-  components: { ViewOfferDialog: () => import('@/components/ViewOfferDialog.vue'), MakeOfferDialog },
+  components: {
+    IconButton,
+    DropdownButtonGroup,
+    ViewOfferDialog: () => import('@/components/ViewOfferDialog.vue'),
+    MakeOfferDialog,
+  },
 })
 export default class CryptomonCard extends Vue {
   @Prop(Cryptomon) cryptomon!: Cryptomon;
@@ -54,15 +69,14 @@ export default class CryptomonCard extends Vue {
 
   isViewOfferDialogOpened: boolean = false;
 
-  public get canBuy() {
-    return this.cryptomon.owner !== this.$store.getters[Getters.DefaultAccount]
-      && this.cryptomon.isOnSale
-      && !this.cryptomon.offer;
+  public get isOwner() {
+    return this.cryptomon.owner === this.$store.getters[Getters.DefaultAccount];
   }
 
-  public get canSell() {
-    return this.cryptomon.owner === this.$store.getters[Getters.DefaultAccount]
-      && this.cryptomon.isIdle;
+  public get canBuy() {
+    return !this.isOwner
+      && this.cryptomon.isOnSale
+      && !this.cryptomon.offer;
   }
 
   public get image() {
@@ -85,6 +99,16 @@ export default class CryptomonCard extends Vue {
   public sell() {
     const { id } = this.cryptomon;
     this.$store.dispatch(Actions.SellCryptomon, { id });
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  public readyForBattle() {
+    // todo
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  public breed() {
+    // todo
   }
 
   public openMakeOfferDialog() {

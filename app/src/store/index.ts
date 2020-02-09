@@ -53,7 +53,6 @@ export default new Vuex.Store<RootState>({
       state.cryptomons[payload.id].offer = payload.offer;
     }),
     updateCryptomons: (state, payload: { cryptomons: Cryptomon[] }) => {
-      console.log(payload.cryptomons);
       state.cryptomons = {
         ...state.cryptomons,
         ..._.keyBy(payload.cryptomons, c => c.id),
