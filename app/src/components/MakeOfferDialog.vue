@@ -14,7 +14,7 @@
         <input type="checkbox" v-model="selectedCryptomons" v-bind:value="cryptomon.id" />
         <span>
           <b>{{ cryptomon.name }}</b>
-          [{{ cryptomon.elementAsString }}]
+          [{{ cryptomon.primaryElementAsString }}]
           [Health: {{ cryptomon.health }}]
           [Strength: {{ cryptomon.strength}}]
         </span>

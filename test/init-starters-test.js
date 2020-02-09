@@ -23,7 +23,8 @@ contract('CryptomonsGame init', async accounts => {
     const pika = await contract.cryptomons(pikaId);
 
     assert.equal(pika.name, 'pika');
-    assert.equal(pika.element, CryptomonElement.Electricity);
+    assert.equal(pika.primaryElement, CryptomonElement.Electricity);
+    assert.equal(pika.secondaryElement, CryptomonElement.Electricity);
     assert.equal(pika.owner, accounts[0]);
   });
 

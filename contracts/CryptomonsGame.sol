@@ -8,7 +8,8 @@ contract CryptomonsGame {
     struct Cryptomon {
         uint id;
         string name;
-        Element element;
+        Element primaryElement;
+        Element secondaryElement;
         uint health;
         uint strength;
         address owner;
@@ -103,7 +104,7 @@ contract CryptomonsGame {
         address owner = msg.sender;
         require(!owners[owner].isInitialized, "Not a new user.");
 
-        Cryptomon storage starter = createCryptomon(owner, element, name, 80, 80);
+        Cryptomon storage starter = createCryptomon(owner, element, element, name, 80, 80);
 
         owners[owner].isInitialized = true;
         emit StarterCryptomonCreated(starter.id);
@@ -206,7 +207,9 @@ contract CryptomonsGame {
     cryptomonExists(parent2Id) onlyOwner(parent2Id) isIdle(parent2Id) {
         uint health = (cryptomons[parent1Id].health + cryptomons[parent2Id].health) / 2 + 10;
         uint strength = (cryptomons[parent1Id].strength + cryptomons[parent2Id].strength) / 2 + 10;
-        Cryptomon storage cryptomon = createCryptomon(msg.sender, cryptomons[parent1Id].element, name, health, strength);
+        Element pElement = cryptomons[parent1Id].primaryElement;
+        Element sElement = cryptomons[parent2Id].primaryElement;
+        Cryptomon storage cryptomon = createCryptomon(msg.sender, pElement, sElement, name, health, strength);
         emit CryptomonBirth(cryptomon.id);
     }
 
@@ -241,13 +244,14 @@ contract CryptomonsGame {
         deleteElementFromArray(owners[from].cryptomonIds, cryptomonId);
     }
 
-    function createCryptomon(address owner, Element element, string memory name, uint health, uint strength)
+    function createCryptomon(address owner, Element primaryElement, Element secondaryElement, string memory name, uint health, uint strength)
     private returns (Cryptomon storage cryptomon) {
         require(totalCryptomons < max, "Cannot create any more Cryptomons in this game.");
         cryptomon = cryptomons[totalCryptomons];
         cryptomon.id = totalCryptomons;
         cryptomon.owner = owner;
-        cryptomon.element = element;
+        cryptomon.primaryElement = primaryElement;
+        cryptomon.secondaryElement = secondaryElement;
         cryptomon.name = name;
         cryptomon.health = health;
         cryptomon.strength = strength;

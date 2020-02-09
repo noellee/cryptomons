@@ -22,9 +22,9 @@
       @cancel="closeBreedDialog"
     />
     <h2>{{ cryptomon.name }}</h2>
-    <img :src="image" :alt="cryptomon.elementAsString" width="240px" />
+    <img :src="image" :alt="cryptomon.primaryElementAsString" width="240px" />
     <ul>
-      <li><span>Element:</span>{{ cryptomon.elementAsString }}</li>
+      <li><span>Element:</span>{{ element }}</li>
       <li><span>Health:</span>{{ cryptomon.health }}</li>
       <li><span>Strength:</span>{{ cryptomon.strength }}</li>
     </ul>
@@ -48,8 +48,6 @@
 </template>
 
 <script lang="ts">
-/* eslint-disable global-require */
-
 import Component from 'vue-class-component';
 import { Prop, Vue } from 'vue-property-decorator';
 import { Cryptomon, CryptomonElement } from '@/game';
@@ -89,21 +87,18 @@ export default class CryptomonCard extends Vue {
       && !this.cryptomon.offer;
   }
 
+  public get element() {
+    const primaryElement = this.cryptomon.primaryElementAsString;
+    const secondaryElement = this.cryptomon.secondaryElementAsString;
+    if (primaryElement === secondaryElement) return primaryElement;
+    return `${primaryElement}, ${secondaryElement}`;
+  }
+
   public get image() {
-    switch (+this.cryptomon.element) {
-      case CryptomonElement.Fire:
-        return require('@/assets/cryptomon-fire.png');
-      case CryptomonElement.Water:
-        return require('@/assets/cryptomon-water.png');
-      case CryptomonElement.Earth:
-        return require('@/assets/cryptomon-earth.png');
-      case CryptomonElement.Electricity:
-        return require('@/assets/cryptomon-electricity.png');
-      case CryptomonElement.Air:
-        return require('@/assets/cryptomon-air.png');
-      default:
-        throw new TypeError('Unknown element');
-    }
+    const primaryElement = this.cryptomon.primaryElementAsString.toLowerCase();
+    const secondaryElement = this.cryptomon.secondaryElementAsString.toLowerCase();
+    // eslint-disable-next-line import/no-dynamic-require,global-require
+    return require(`@/assets/cryptomon-${primaryElement}-${secondaryElement}.png`);
   }
 
   public sell() {

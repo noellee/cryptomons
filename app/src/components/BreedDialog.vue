@@ -13,7 +13,7 @@
         <input type="radio" v-model="selectedCryptomon" v-bind:value="cryptomon.id" />
         <span>
             <b>{{ cryptomon.name }}</b>
-            [{{ cryptomon.elementAsString }}]
+            [{{ cryptomon.primaryElementAsString }}]
             [Health: {{ cryptomon.health }}]
             [Strength: {{ cryptomon.strength}}]
           </span>

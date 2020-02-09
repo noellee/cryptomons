@@ -11,7 +11,9 @@ export default class Cryptomon {
 
   public readonly strength: number;
 
-  public readonly element: CryptomonElement;
+  public readonly primaryElement: CryptomonElement;
+
+  public readonly secondaryElement: CryptomonElement;
 
   public owner: string;
 
@@ -19,19 +21,25 @@ export default class Cryptomon {
 
   private _state: CryptomonState;
 
-  constructor(id: number, name: string, element: CryptomonElement, state: CryptomonState,
-    health: number, strength: number, owner: string) {
+  constructor(id: number, name: string, primaryElement: CryptomonElement,
+    secondaryElement: CryptomonElement, state: CryptomonState, health: number, strength: number,
+    owner: string) {
     this.id = id;
     this.name = name;
     this.health = health;
     this.strength = strength;
-    this.element = element;
+    this.primaryElement = primaryElement;
+    this.secondaryElement = secondaryElement;
     this._state = state;
     this.owner = owner;
   }
 
-  public get elementAsString(): string {
-    return CryptomonElement[this.element];
+  public get primaryElementAsString(): string {
+    return CryptomonElement[this.primaryElement];
+  }
+
+  public get secondaryElementAsString(): string {
+    return CryptomonElement[this.secondaryElement];
   }
 
   public get isInAnOffer(): boolean {
@@ -50,11 +58,12 @@ export default class Cryptomon {
     this._state = value ? CryptomonState.OnSale : CryptomonState.Idle;
   }
 
-  static fromResult(result: {id: number, name: string, element: CryptomonElement,
-    state: CryptomonState, health: number, strength: number, owner: string}) {
+  static fromResult(result: {id: number, name: string, primaryElement: CryptomonElement,
+    secondaryElement: CryptomonElement, state: CryptomonState, health: number, strength: number,
+    owner: string}) {
     return new Cryptomon(
-      result.id, result.name, result.element, result.state, result.health, result.strength,
-      result.owner,
+      result.id, result.name, result.primaryElement, result.secondaryElement, result.state,
+      result.health, result.strength, result.owner,
     );
   }
 }
