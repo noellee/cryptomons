@@ -60,7 +60,7 @@ export default class MakeOfferDialog extends Vue {
   }
 }
 </script>
-<style scoped>
+<style >
   label.price-input {
     display: flex;
     align-items: center;

@@ -14,6 +14,9 @@ enum Actions {
   AcceptOffer = 'acceptOffer',
   RejectOffer = 'rejectOffer',
   WithdrawOffer = 'withdrawOffer',
+
+  // Breed
+  Breed = 'breed'
 }
 
 export default Actions;

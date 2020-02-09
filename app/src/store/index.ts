@@ -88,7 +88,9 @@ export default new Vuex.Store<RootState>({
       commit('updateOwnerStatus', true);
     },
 
+    // ///////////////////////////
     // Fetching stuff
+    // ///////////////////////////
 
     [Actions.FetchOwnerStatus]: async ({ state, commit }) => {
       if (!state.game) throw new TypeError();
@@ -114,7 +116,9 @@ export default new Vuex.Store<RootState>({
       commit('updateHasFetchedMarketplace', true);
     },
 
+    // ///////////////////////////
     // Trading
+    // ///////////////////////////
 
     [Actions.SellCryptomon]: async ({ state, commit }, payload: { id: number }) => {
       if (!state.game) throw new TypeError();
@@ -147,5 +151,15 @@ export default new Vuex.Store<RootState>({
       commit('updateOffer', { id, offer: null });
     },
 
+    // ///////////////////////////
+    // Breeding
+    // ///////////////////////////
+
+    [Actions.Breed]: async ({ state, dispatch },
+      payload: { parent1: number, parent2: number, name: string}) => {
+      if (!state.game) throw new TypeError();
+      await state.game.breed(payload.parent1, payload.parent2, payload.name);
+      dispatch(Actions.FetchCryptomonsByOwner);
+    },
   },
 });

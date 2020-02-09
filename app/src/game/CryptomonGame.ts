@@ -114,6 +114,11 @@ export default class CryptomonGame {
     await this._contract.methods.withdrawOffer(id).send({ from });
   }
 
+  async breed(parent1: number, parent2: number, name: string) {
+    const from = this.defaultAccount;
+    await this._contract.methods.breed(parent1, parent2, name).send({ from });
+  }
+
   // UTILITY METHODS
 
   private _toNumber(bnString: string) {
