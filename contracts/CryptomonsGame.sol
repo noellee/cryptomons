@@ -3,7 +3,7 @@ pragma solidity >=0.6.0 <0.7.0;
 contract CryptomonsGame {
     enum Element {Fire, Water, Earth, Electricity, Air}
 
-    enum State {Idle, OnSale, InAnOffer, Shared}
+    enum State {Idle, OnSale, InAnOffer, Shared, ReadyToFight, InAChallenge}
 
     struct Cryptomon {
         uint id;
@@ -28,6 +28,11 @@ contract CryptomonsGame {
         uint[] cryptomonIds;  // buyer cryptomons
     }
 
+    struct Challenge {
+        uint bet;
+        uint challengerId;
+    }
+
     uint public starterCryptomonCost = 1 ether;  // cost of creating a starter cryptomon
 
     uint public totalCryptomons = 0;             // count of all cryptomons
@@ -45,9 +50,15 @@ contract CryptomonsGame {
     // maps cryptomonId => offers
     mapping(uint => Offer) public offers;
 
-    /////////////////////////////
+    // maps cryptomonId => challenges
+    mapping(uint => Challenge) public challenges;
+
+    // maps account address => amount of wei owed to them
+    mapping(address => uint) private balances;
+
+    //////////////////////////////////////
     // MODIFIERS
-    /////////////////////////////
+    //////////////////////////////////////
 
     modifier isIdle(uint cryptomonId) {
         require(cryptomons[cryptomonId].state == State.Idle, "Cryptomon must be in idle state.");
@@ -98,6 +109,22 @@ contract CryptomonsGame {
         _;
     }
 
+    modifier isReadyToFight(uint cryptomonId) {
+        require(
+            cryptomons[cryptomonId].state == State.ReadyToFight,
+            "Cryptomon must be ready to fight."
+        );
+        _;
+    }
+
+    modifier isInAChallenge(uint cryptomonId) {
+        require(
+            cryptomons[cryptomonId].state == State.InAChallenge,
+            "Cryptomon must be in a challenge."
+        );
+        _;
+    }
+
     modifier canBreed(uint id) {
         require(
             cryptomons[id].state == State.Shared || cryptomons[id].state == State.Idle,
@@ -106,9 +133,9 @@ contract CryptomonsGame {
         _;
     }
 
-    /////////////////////////////
+    //////////////////////////////////////
     // PUBLIC API: GETTERS
-    /////////////////////////////
+    //////////////////////////////////////
 
     function isOwnerInitialized(address owner) public view returns (bool) {
         return owners[owner].isInitialized;
@@ -136,9 +163,28 @@ contract CryptomonsGame {
         cryptomonId = offers[id].cryptomonIds[index];
     }
 
-    /////////////////////////////
+    //////////////////////////////////////
+    // PUBLIC API: WITHDRAW FROM BALANCE
+    //////////////////////////////////////
+
+    function getBalance() public view returns (uint balance) {
+        balance = balances[msg.sender];
+    }
+
+    function withdrawFunds(uint amount) external {
+        require(amount <= getBalance(), "Cannot withdraw more than the account balance.");
+        msg.sender.transfer(amount);
+    }
+
+    function addToBalance(address account, uint amount) private {
+        uint result = balances[account] + amount;
+        require(result >= balances[account], "Maximum balance exceeded.");
+        balances[account] = result;
+    }
+
+    //////////////////////////////////////
     // PUBLIC API: INIT STARTER
-    /////////////////////////////
+    //////////////////////////////////////
 
     function initStarterCryptomon(string calldata name, Element element) external payable {
         require(msg.value == starterCryptomonCost, "Sent eth does not match starter cryptomon cost");
@@ -152,9 +198,9 @@ contract CryptomonsGame {
         emit StarterCryptomonCreated(starter.id);
     }
 
-    /////////////////////////////
+    //////////////////////////////////////
     // PUBLIC API: TRADING
-    /////////////////////////////
+    //////////////////////////////////////
 
     /// @notice Puts a Cryptomon up for sale
     /// @param id The id of the Cryptomon to sell
@@ -240,9 +286,9 @@ contract CryptomonsGame {
         emit OfferWithdrawn(cryptomonId);
     }
 
-    /////////////////////////////
+    //////////////////////////////////////
     // PUBLIC API: BREEDING
-    /////////////////////////////
+    //////////////////////////////////////
 
     function breed(uint parent1Id, uint parent2Id, string calldata name)
     external
@@ -256,21 +302,94 @@ contract CryptomonsGame {
         emit CryptomonBirth(cryptomon.id);
     }
 
-    /////////////////////////////
-    // PUBLIC API: BATTLE
-    /////////////////////////////
+    //////////////////////////////////////
+    // PUBLIC API: FIGHTING
+    //////////////////////////////////////
 
-    //    function readyToBattle() {
-    //        
-    //    }
-    //    
-    //    function pickFight() {
-    //
-    //    }
+    function readyToFight(uint cryptomonId)
+    external cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isIdle(cryptomonId) {
+        cryptomons[cryptomonId].state = State.ReadyToFight;
+    }
 
-    /////////////////////////////
+    function leaveFight(uint cryptomonId)
+    external cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isReadyToFight(cryptomonId) {
+        cryptomons[cryptomonId].state = State.Idle;
+    }
+
+    // @param opponentId The id of the Cryptomon being challenged
+    // @param challenger The id of the challenger Cryptomon
+    function challenge(uint opponentId, uint challengerId)
+    external payable
+    cryptomonExists(opponentId) isReadyToFight(opponentId)
+    cryptomonExists(challengerId) isReadyToFight(challengerId) onlyOwner(challengerId) {
+        Cryptomon storage challenger = cryptomons[challengerId];
+        Cryptomon storage opponent = cryptomons[opponentId];
+        require(challenger.owner != opponent.owner, "Can't fight your own Cryptomons.");
+        Challenge storage newChallenge = challenges[opponent.id];
+        newChallenge.challengerId = challenger.id;
+        newChallenge.bet = msg.value;
+        challenger.state = State.InAChallenge;
+        opponent.state = State.InAChallenge;
+    }
+
+    function rejectChallenge(uint cryptomonId)
+    external cryptomonExists(cryptomonId) isInAChallenge(cryptomonId) onlyOwner(cryptomonId) {
+        removeChallenge(cryptomonId);
+    }
+
+    function withdrawChallenge(uint cryptomonId)
+    external cryptomonExists(cryptomonId) isInAChallenge(cryptomonId) {
+        require(
+            cryptomons[challenges[cryptomonId].challengerId].owner == msg.sender,
+            "Only the challenger can withdraw."
+        );
+        removeChallenge(cryptomonId);
+    }
+
+    function removeChallenge(uint cryptomonId) private {
+        uint challengerId = challenges[cryptomonId].challengerId;
+        cryptomons[cryptomonId].state = State.ReadyToFight;
+        cryptomons[challengerId].state = State.ReadyToFight;
+        delete challenges[cryptomonId];
+    }
+
+    function acceptChallenge(uint cryptomonId)
+    external payable
+    cryptomonExists(cryptomonId) isInAChallenge(cryptomonId) onlyOwner(cryptomonId) {
+        Challenge storage _challenge = challenges[cryptomonId];
+        require(msg.value == _challenge.bet, "Expected bet to be matched.");
+        uint challengerId = _challenge.challengerId;
+        Cryptomon storage challenger = cryptomons[challengerId];
+        Cryptomon storage opponent = cryptomons[cryptomonId];
+        require(challenger.owner != opponent.owner, "Can't fight your own Cryptomons.");
+        uint challengerHealth = deductHealth(challenger.health, opponent.strength);
+        uint opponentHealth = deductHealth(opponent.health, challenger.strength);
+        challenger.state = State.Idle;
+        opponent.state = State.Idle;
+
+        if (challengerHealth > opponentHealth) {
+            addToBalance(challenger.owner, _challenge.bet * 2);
+            emit Fight(opponent.id, challenger.id, challenger.id, challenger.owner);
+        } else if (challengerHealth < opponentHealth) {
+            addToBalance(opponent.owner, _challenge.bet * 2);
+            emit Fight(opponent.id, challenger.id, opponent.id, opponent.owner);
+        } else {
+            addToBalance(opponent.owner, _challenge.bet);
+            addToBalance(challenger.owner, _challenge.bet);
+            emit Fight(opponent.id, challenger.id, 0, address(0x0));
+        }
+    }
+
+    function deductHealth(uint health, uint deduct) private pure returns (uint) {
+        if (deduct > health) {
+            return 0;
+        }
+        return health - deduct;
+    }
+
+    //////////////////////////////////////
     // PUBLIC API: SHARING
-    /////////////////////////////
+    //////////////////////////////////////
 
     function share(uint cryptomonId, address to)
     external cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isIdle(cryptomonId) {
@@ -289,9 +408,9 @@ contract CryptomonsGame {
         deleteElementFromArray(coOwners[coOwner], cryptomonId);
     }
 
-    /////////////////////////////
+    //////////////////////////////////////
     // INTERNAL FUNCTIONS
-    /////////////////////////////
+    //////////////////////////////////////
 
     function transferOwnership(uint cryptomonId, address to) private {
         address from = cryptomons[cryptomonId].owner;
@@ -330,9 +449,9 @@ contract CryptomonsGame {
         require(success, "Funds transfer did not succeed.");
     }
 
-    /////////////////////////////
+    //////////////////////////////////////
     // MISC HELPERS
-    /////////////////////////////
+    //////////////////////////////////////
 
     function findIndex(uint[] storage array, uint element) private view returns (uint) {
         for (uint i = 0; i < array.length; i++) {
@@ -351,9 +470,9 @@ contract CryptomonsGame {
         array.pop();
     }
 
-    /////////////////////////////
+    //////////////////////////////////////
     // EVENTS
-    /////////////////////////////
+    //////////////////////////////////////
 
     event StarterCryptomonCreated(uint id);
     event OfferMade(uint id);
@@ -362,4 +481,5 @@ contract CryptomonsGame {
     event OfferWithdrawn(uint id);
     event CryptomonPutOnSale(uint id);
     event CryptomonBirth(uint id);
+    event Fight(uint opponentId, uint challengerId, uint winnerId, address winnerOwner);
 }

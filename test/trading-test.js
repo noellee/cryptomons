@@ -99,4 +99,9 @@ contract('CryptomonsGame trade', accounts => {
       assert.deepEqual(buyerCryptomons, [pika.id]);
     });
   });
+
+  it('offer should be gone after interaction', async () => {
+    const offer = await contract.offers(pikaId);
+    assert(web3.utils.toBN(offer.buyer).eq(web3.utils.toBN(0)));
+  });
 });

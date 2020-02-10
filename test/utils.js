@@ -11,6 +11,8 @@ module.exports = {
     OnSale: 1,
     InAnOffer: 2,
     Shared: 3,
+    ReadyToFight: 4,
+    InAChallenge: 5,
   },
   assertThrowsAsync: async (fn, regExp) => {
     let f = () => {};
