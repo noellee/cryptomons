@@ -29,7 +29,7 @@ contract CryptomonsGame {
     }
 
     struct Challenge {
-        uint bet;
+        uint stake;
         uint challengerId;
     }
 
@@ -327,7 +327,7 @@ contract CryptomonsGame {
         require(challenger.owner != opponent.owner, "Can't fight your own Cryptomons.");
         Challenge storage newChallenge = challenges[opponent.id];
         newChallenge.challengerId = challenger.id;
-        newChallenge.bet = msg.value;
+        newChallenge.stake = msg.value;
         challenger.state = State.InAChallenge;
         opponent.state = State.InAChallenge;
     }
@@ -357,7 +357,7 @@ contract CryptomonsGame {
     external payable
     cryptomonExists(cryptomonId) isInAChallenge(cryptomonId) onlyOwner(cryptomonId) {
         Challenge storage _challenge = challenges[cryptomonId];
-        require(msg.value == _challenge.bet, "Expected bet to be matched.");
+        require(msg.value == _challenge.stake, "Expected stake to be matched.");
         uint challengerId = _challenge.challengerId;
         Cryptomon storage challenger = cryptomons[challengerId];
         Cryptomon storage opponent = cryptomons[cryptomonId];
@@ -368,14 +368,14 @@ contract CryptomonsGame {
         opponent.state = State.Idle;
 
         if (challengerHealth > opponentHealth) {
-            addToBalance(challenger.owner, _challenge.bet * 2);
+            addToBalance(challenger.owner, _challenge.stake * 2);
             emit Fight(opponent.id, challenger.id, challenger.id, challenger.owner);
         } else if (challengerHealth < opponentHealth) {
-            addToBalance(opponent.owner, _challenge.bet * 2);
+            addToBalance(opponent.owner, _challenge.stake * 2);
             emit Fight(opponent.id, challenger.id, opponent.id, opponent.owner);
         } else {
-            addToBalance(opponent.owner, _challenge.bet);
-            addToBalance(challenger.owner, _challenge.bet);
+            addToBalance(opponent.owner, _challenge.stake);
+            addToBalance(challenger.owner, _challenge.stake);
             emit Fight(opponent.id, challenger.id, 0, address(0x0));
         }
     }

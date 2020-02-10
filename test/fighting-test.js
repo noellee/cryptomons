@@ -4,7 +4,7 @@ const CryptomonsGame = artifacts.require('CryptomonsGame');
 
 contract('CryptomonsGame fighting', accounts => {
   let contract, opponentOwner, challengerOwner, opponentId, challengerId;
-  const bet = 12345;
+  const stake = 12345;
 
   before(async () => {
     contract = await CryptomonsGame.deployed();
@@ -59,7 +59,7 @@ contract('CryptomonsGame fighting', accounts => {
     });
 
     beforeEach('should be able to challenge if challenger is ready to fight', async () => {
-      await contract.challenge(opponentId, challengerId, { from: challengerOwner, value: bet });
+      await contract.challenge(opponentId, challengerId, { from: challengerOwner, value: stake });
 
       const opponent = await contract.cryptomons(opponentId);
       const challenger = await contract.cryptomons(challengerId);
@@ -69,7 +69,7 @@ contract('CryptomonsGame fighting', accounts => {
       assert.equal(challenger.state, CryptomonState.InAChallenge);
 
       assert.equal(challenge.challengerId.toNumber(), challenger.id.toNumber());
-      assert.equal(challenge.bet, bet);
+      assert.equal(challenge.stake, stake);
     });
 
     it('opponent should be able to reject challenge', async () => {
@@ -91,7 +91,7 @@ contract('CryptomonsGame fighting', accounts => {
     });
 
     it('opponent should be able to accept challenge', async () => {
-      await contract.acceptChallenge(opponentId, { from: opponentOwner, value: bet });
+      await contract.acceptChallenge(opponentId, { from: opponentOwner, value: stake });
       
       const opponent = await contract.cryptomons(opponentId);
       const challenger = await contract.cryptomons(challengerId);
