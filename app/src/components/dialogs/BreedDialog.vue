@@ -9,7 +9,7 @@
         <span>Name the baby Cryptomon</span>
         <input type="text" v-model="name" placeholder="Name">
       </label>
-      <label class="radio-label" v-for="cryptomon in myIdleCryptomons" v-bind:key="cryptomon.id">
+      <label class="radio-label" v-for="cryptomon in breedableCryptomons" v-bind:key="cryptomon.id">
         <input type="radio" v-model="selectedCryptomon" v-bind:value="cryptomon.id" />
         <span>
             <b>{{ cryptomon.name }}</b>
@@ -29,6 +29,7 @@
 <script lang="ts">
 import Component from 'vue-class-component';
 import { Prop, Vue } from 'vue-property-decorator';
+import _ from 'lodash';
 import Dialog from '@/components/generic/Dialog.vue';
 import Getters from '@/store/getters';
 import { Cryptomon } from '@/game';
@@ -44,11 +45,16 @@ export default class BreedDialog extends Vue {
 
   name: string = '';
 
-  public get myIdleCryptomons() {
+  public get breedableCryptomons() {
     const defaultAccount = this.$store.getters[Getters.DefaultAccount];
     const getCryptomonsByOwner = this.$store.getters[Getters.GetCryptomonsByOwner];
-    const cryptomons: Cryptomon[] = getCryptomonsByOwner(defaultAccount);
-    return cryptomons.filter(c => c.isIdle).filter(c => c.id !== this.cryptomon.id);
+    const getCryptomonsByCoOwner = this.$store.getters[Getters.GetCryptomonsByCoOwner];
+    const ownedCryptomons: Cryptomon[] = getCryptomonsByOwner(defaultAccount);
+    const coOwnedCryptomons: Cryptomon[] = getCryptomonsByCoOwner(defaultAccount);
+    return _(ownedCryptomons)
+      .concat(coOwnedCryptomons)
+      .filter(c => c.canBreed)
+      .filter(c => c.id !== this.cryptomon.id);
   }
 
   public async breed() {

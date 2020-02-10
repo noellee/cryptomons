@@ -65,6 +65,10 @@ export default class Cryptomon {
     return this._state === CryptomonState.Shared;
   }
 
+  public get canBreed(): boolean {
+    return this.isIdle || this.isShared;
+  }
+
   static fromResult(result: {id: number, name: string, primaryElement: CryptomonElement,
     secondaryElement: CryptomonElement, state: CryptomonState, health: number, strength: number,
     owner: string, coOwner: string }) {
