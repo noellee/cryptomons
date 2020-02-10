@@ -15,7 +15,8 @@ module.exports = {
     InAChallenge: 5,
   },
   assertThrowsAsync: async (fn, regExp) => {
-    let f = () => {};
+    let f = () => {
+    };
     try {
       await fn();
     }
@@ -26,5 +27,19 @@ module.exports = {
     } finally {
       assert.throws(f, regExp);
     }
+  },
+  assertBalanceIncrease: async (makeTx, account, increase) => {
+    const balanceBefore = web3.utils.toBN(await web3.eth.getBalance(account));
+    const txResult = await makeTx();
+    const balanceAfter = web3.utils.toBN(await web3.eth.getBalance(account));
+
+    const tx = await web3.eth.getTransaction(txResult.tx);
+    const gasPrice = web3.utils.toBN(tx.gasPrice);
+    const gasUsed = web3.utils.toBN(txResult.receipt.gasUsed);
+    const gas = gasPrice.mul(gasUsed);
+    assert.equal(
+      balanceAfter.toString(),
+      balanceBefore.sub(gas).add(web3.utils.toBN(increase)).toString(),
+    );
   }
 };

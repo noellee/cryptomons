@@ -1,10 +1,11 @@
-const { CryptomonElement, CryptomonState } = require('./utils.js');
+const { CryptomonElement, CryptomonState, assertBalanceIncrease } = require('./utils.js');
 
 const CryptomonsGame = artifacts.require('CryptomonsGame');
 
 contract('CryptomonsGame trade', accounts => {
   const seller = accounts[0];
   const buyer = accounts[1];
+  const offerPrice = 12345;
   let contract, pikaId;
 
   before(async () => {
@@ -13,41 +14,79 @@ contract('CryptomonsGame trade', accounts => {
     const pikaTx = await contract.initStarterCryptomon('pika', CryptomonElement.Electricity, { from: seller, value: cost });
     pikaId = pikaTx.logs[0].args.id.toNumber();
   });
-  
+
   it('seller should be able to sell owned cryptomon', async () => {
     await contract.sell(pikaId, { from: seller });
     const pika = await contract.cryptomons(pikaId);
     assert.equal(pika.state, CryptomonState.OnSale);
   });
 
-  it('make offer', async () => {
-    await contract.makeOffer(pikaId, [], { from: buyer, value: 100 });
-    const offer = await contract.offers(pikaId);
-    assert.equal(offer.buyer, buyer);
-    assert.equal(offer.price.toNumber(), 100);
-  });
+  describe('offer interaction', async () => {
 
-  it('seller should be able to accept offers', async () => {
-    const sellerBalanceBefore = web3.utils.toBN(await web3.eth.getBalance(seller));
-    const acceptOfferTx = await contract.acceptOffer(pikaId, { from: seller });
-    const sellerBalanceAfter = web3.utils.toBN(await web3.eth.getBalance(seller));
-    
-    const tx = await web3.eth.getTransaction(acceptOfferTx.tx);
-    const gasPrice = web3.utils.toBN(tx.gasPrice);
-    const gasUsed = web3.utils.toBN(acceptOfferTx.receipt.gasUsed);
-    const gas = gasPrice.mul(gasUsed);
-    assert.equal(
-      sellerBalanceAfter.toString(),
-      sellerBalanceBefore.sub(gas).add(web3.utils.toBN(100)).toString(),
-    );
+    beforeEach('make offer', async () => {
+      await contract.makeOffer(pikaId, [], { from: buyer, value: offerPrice });
+      const offer = await contract.offers(pikaId);
+      assert.equal(offer.buyer, buyer);
+      assert.equal(offer.price.toNumber(), offerPrice);
+    });
 
-    const pika = await contract.cryptomons(pikaId);
-    assert.equal(pika.owner, buyer);
-    assert.equal(pika.state, CryptomonState.Idle);
+    it('seller should be able to reject offers', async () => {
+      await contract.rejectOffer(pikaId, { from: seller });
 
-    const sellerCryptomons = await contract.getCryptomonIdsByOwner(seller);
-    const buyerCryptomons = await contract.getCryptomonIdsByOwner(buyer);
-    assert.deepEqual(sellerCryptomons, []);
-    assert.deepEqual(buyerCryptomons, [pika.id]);
+      const pika = await contract.cryptomons(pikaId);
+      assert.equal(pika.owner, seller);
+      assert.equal(pika.state, CryptomonState.OnSale);  // still on sale
+
+      // refund
+      const buyerBalance = await contract.getBalance({ from: buyer });
+      assert.equal(buyerBalance.toNumber(), offerPrice);
+    });
+
+    it('buyer should be able to withdraw', async () => {
+      await contract.withdrawOffer(pikaId, { from: buyer });
+
+      const pika = await contract.cryptomons(pikaId);
+      assert.equal(pika.owner, seller);
+      assert.equal(pika.state, CryptomonState.OnSale);  // still on sale
+
+      // refund
+      const buyerBalance = await contract.getBalance({ from: buyer });
+      assert.equal(buyerBalance.toNumber(), offerPrice);
+    });
+
+    it('seller should be able to accept offers', async () => {
+      await contract.acceptOffer(pikaId, { from: seller });
+
+      const pika = await contract.cryptomons(pikaId);
+      assert.equal(pika.owner, buyer);
+      assert.equal(pika.state, CryptomonState.Idle);
+
+      const buyerCryptomons = await contract.getCryptomonIdsByOwner(buyer);
+      assert.deepEqual(buyerCryptomons, [pika.id]);
+
+      // fund transfer
+      const sellerBalance = await contract.getBalance({ from: seller });
+      assert.equal(sellerBalance.toNumber(), offerPrice);
+    });
+
+    afterEach('offer should be gone after interaction', async () => {
+      const offer = await contract.offers(pikaId);
+      assert(web3.utils.toBN(offer.buyer).eq(web3.utils.toBN(0)));
+    });
+
+    afterEach('clear balance', async () => {
+      const withdrawPromise = async (account) => {
+        const balance = await contract.getBalance({ from: account });
+        if (!balance.toNumber()) return;
+        await assertBalanceIncrease(
+          async () => await contract.withdrawFunds(balance, { from: account }),
+          account, offerPrice,
+        );
+      };
+      await Promise.all([
+        withdrawPromise(buyer),
+        withdrawPromise(seller),
+      ]);
+    });
   });
 });

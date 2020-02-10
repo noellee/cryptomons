@@ -173,6 +173,7 @@ contract CryptomonsGame {
 
     function withdrawFunds(uint amount) external {
         require(amount <= getBalance(), "Cannot withdraw more than the account balance.");
+        balances[msg.sender] -= amount;
         msg.sender.transfer(amount);
     }
 
@@ -263,8 +264,7 @@ contract CryptomonsGame {
         }
 
         // buyer's deposit gets sent to seller
-        (bool success,) = seller.call.value(offer.price)("");
-        require(success, "Funds transfer did not succeed.");
+        addToBalance(seller, offer.price);
 
         emit OfferAccepted(cryptomonId);
     }
@@ -445,8 +445,7 @@ contract CryptomonsGame {
         }
 
         // refund buyer's deposit
-        (bool success,) = offer.buyer.call.value(offer.price)("");
-        require(success, "Funds transfer did not succeed.");
+        addToBalance(offer.buyer, offer.price);
     }
 
     //////////////////////////////////////
