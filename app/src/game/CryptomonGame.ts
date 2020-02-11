@@ -119,7 +119,7 @@ export default class CryptomonGame {
       .map(this._web3.utils.toBN)
       .map(id => id.toNumber());
     const cryptomons = await this.getCryptomonsByIds(ids);
-    return cryptomons.filter(c => c.isReadyToFight); // check if they're still ready to fight
+    return cryptomons.filter(c => c.isReadyToFight || c.isInAChallenge);
   }
 
   // ///////////////////////////
@@ -186,6 +186,10 @@ export default class CryptomonGame {
 
   async leaveFight(id: number) {
     await this._methods.leaveFight(id).send();
+  }
+
+  async challenge(opponentId: number, challengerId: number, stake: number) {
+    await this._methods.challenge(opponentId, challengerId).send({ value: stake });
   }
 
   // UTILITY METHODS

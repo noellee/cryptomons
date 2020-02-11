@@ -27,6 +27,12 @@
       @share="closeShareDialog"
       @cancel="closeShareDialog"
     />
+    <ChallengeDialog
+      v-if="isChallengeDialogOpened"
+      :cryptomon="cryptomon"
+      @challenge="closeChallengeDialog"
+      @cancel="closeChallengeDialog"
+    />
 
     <DropdownButtonGroup dropdown-text="More options">
     <!--Idle and owned-->
@@ -43,17 +49,15 @@
       <IconButton @click="endSharing" icon="heart-broken" v-if="isOwner">Un-share</IconButton>
     </template>
 
-    <template v-else-if="cryptomon.isReadyToFight && !cryptomon.challenge">
+    <!--Ready to fight and owned-->
+    <template v-else-if="cryptomon.isReadyToFight">
       <IconButton v-if="isOwner" @click="leaveFight" icon="door-open" class="bg-red">
         Leave fight
       </IconButton>
-      <button v-else disabled class="secondary">Waiting for challenge</button>
+      <IconButton v-else @click="openChallengeDialog" icon="fist-raised">Challenge</IconButton>
     </template>
 
-    <template v-else-if="!isOwner && cryptomon.isReadyToFight">
-      <IconButton @click="challenge" icon="fist-raised">Challenge</IconButton>
-    </template>
-
+    <!--Challenged-->
     <template v-else-if="cryptomon.isInAChallenge">
       <IconButton @click="challenge" icon="eye">View challenge</IconButton>
     </template>
@@ -83,6 +87,7 @@ import DropdownButtonGroup from '@/components/generic/DropdownButtonGroup.vue';
 import IconButton from '@/components/generic/IconButton.vue';
 import BreedDialog from '@/components/dialogs/BreedDialog.vue';
 import ShareDialog from '@/components/dialogs/ShareDialog.vue';
+import ChallengeDialog from '@/components/dialogs/ChallengeDialog.vue';
 
 @Component({
   components: {
@@ -92,6 +97,7 @@ import ShareDialog from '@/components/dialogs/ShareDialog.vue';
     DropdownButtonGroup,
     ViewOfferDialog: () => import('@/components/dialogs/ViewOfferDialog.vue'),
     MakeOfferDialog,
+    ChallengeDialog,
   },
 })
 export default class CryptomonCard extends Vue {
@@ -104,6 +110,8 @@ export default class CryptomonCard extends Vue {
   isBreedDialogOpened: boolean = false;
 
   isShareDialogOpened: boolean = false;
+
+  isChallengeDialogOpened: boolean = false;
 
   get defaultAccount() {
     return this.$store.getters[Getters.DefaultAccount];
@@ -181,6 +189,14 @@ export default class CryptomonCard extends Vue {
 
   public closeShareDialog() {
     this.isShareDialogOpened = false;
+  }
+
+  public openChallengeDialog() {
+    this.isChallengeDialogOpened = true;
+  }
+
+  public closeChallengeDialog() {
+    this.isChallengeDialogOpened = false;
   }
 }
 </script>

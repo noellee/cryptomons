@@ -27,6 +27,7 @@ enum Actions {
   // Fighting
   ReadyToFight = 'readyToFight',
   LeaveFight = 'leaveFight',
+  Challenge = 'challenge',
 }
 
 export default Actions;

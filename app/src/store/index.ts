@@ -44,7 +44,7 @@ export default new Vuex.Store<RootState>({
     ),
     [Getters.MarketplaceCryptomons]: state => _.values(state.cryptomons).filter(c => c.isOnSale),
     [Getters.BattlegroundCryptomons]: state => (
-      _.values(state.cryptomons).filter(c => c.isReadyToFight)
+      _.values(state.cryptomons).filter(c => c.isReadyToFight || c.isInAChallenge)
     ),
     [Getters.IsWeb3Available]: state => () => state.web3 !== null,
     [Getters.IsOwnerInitialized]: state => state.ownerIsInitialized,
@@ -220,6 +220,14 @@ export default new Vuex.Store<RootState>({
       await state.game.leaveFight(id);
       const updater: Updater = (cryptomon) => { cryptomon.isReadyToFight = false; };
       commit('updateCryptomon', { id, updater });
+    },
+    [Actions.Challenge]: async ({ state, commit },
+      payload: { opponentId: number, challengerId: number, stake: number }) => {
+      if (!state.game) throw new TypeError();
+      await state.game.challenge(payload.opponentId, payload.challengerId, payload.stake);
+      const updater: Updater = (cryptomon) => { cryptomon.isInAChallenge = false; };
+      commit('updateCryptomon', { id: payload.opponentId, updater });
+      commit('updateCryptomon', { id: payload.challengerId, updater });
     },
   },
 });
