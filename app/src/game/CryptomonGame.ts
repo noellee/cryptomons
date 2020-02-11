@@ -11,11 +11,30 @@ export default class CryptomonGame {
 
   private _contract: Contract;
 
+  private _methods: any;
+
   private _starterCost: number | undefined;
 
   constructor(web3: Web3) {
     this._web3 = web3;
     this._contract = getContract(this._web3);
+
+    // due to unknown reasons (maybe metamask related),
+    // the default account isn't passed to contract calls
+    // this is a workaround to avoid passing { from: ... } every time on contract calls
+    const self = this;
+    this._methods = new Proxy(this._contract.methods, {
+      get(methods, methodName): any {
+        return (...params: any[]) => {
+          const method = methods[methodName](...params);
+          const from = self.defaultAccount;
+          return {
+            call: async (options: any) => method.call({ from, ...options }),
+            send: async (options: any) => method.send({ from, ...options }),
+          };
+        };
+      },
+    });
   }
 
   get defaultAccount(): string {
@@ -28,18 +47,18 @@ export default class CryptomonGame {
 
   async getStarterCryptomonCost() {
     if (this._starterCost === undefined) {
-      this._starterCost = await this._contract.methods.starterCryptomonCost().call();
+      this._starterCost = await this._methods.starterCryptomonCost().call();
     }
     return this._starterCost;
   }
 
   async getCryptomonIds(owner: string): Promise<number[]> {
-    const ids: string[] = await this._contract.methods.getCryptomonIdsByOwner(owner).call();
+    const ids: string[] = await this._methods.getCryptomonIdsByOwner(owner).call();
     return ids.map(id => +id);
   }
 
   async getCryptomonIdsByCoOwner(coOwner: string): Promise<number[]> {
-    const ids: string[] = await this._contract.methods.getCryptomonIdsByCoOwner(coOwner).call();
+    const ids: string[] = await this._methods.getCryptomonIdsByCoOwner(coOwner).call();
     return ids.map(id => +id);
   }
 
@@ -53,25 +72,14 @@ export default class CryptomonGame {
     return this.getCryptomonsByIds(ids);
   }
 
-  async initStarterCryptomon(name: string, element: CryptomonElement): Promise<void> {
-    const value = await this.getStarterCryptomonCost();
-    const from = this.defaultAccount;
-    await this._contract.methods.initStarterCryptomon(name, element).send({ from, value });
-  }
-
   async isOwnerInitialized(ownerAddr?: string) {
     const owner = ownerAddr ?? this.defaultAccount;
-    return this._contract.methods.isOwnerInitialized(owner).call();
-  }
-
-  async sellCryptomon(id: number): Promise<void> {
-    const from = this.defaultAccount;
-    await this._contract.methods.sell(id).send({ from });
+    return this._methods.isOwnerInitialized(owner).call();
   }
 
   async getCryptomonById(id: number): Promise<Cryptomon> {
     const [cryptomonResult, offer] = await Promise.all([
-      this._contract.methods.cryptomons(id).call(),
+      this._methods.cryptomons(id).call(),
       this.getOffer(id),
     ]);
     const cryptomon = Cryptomon.fromResult({ ...cryptomonResult, id });
@@ -82,6 +90,16 @@ export default class CryptomonGame {
   async getCryptomonsByIds(ids: number[]): Promise<Cryptomon[]> {
     const promises = ids.map(this.getCryptomonById.bind(this));
     return Promise.all(promises);
+  }
+
+  async getOffer(id: number): Promise<Offer | null> {
+    const offer = await this._methods.offers(id).call();
+    if (this._isEmptyAddress(offer.buyer)) return null;
+    const count = await this._methods.getOfferedCryptomonsCount(id).call();
+    const promises = Array(this._toNumber(count))
+      .map((v, i) => this._methods.getOfferedCryptomonByIndex(id, i).call());
+    const offeredCryptomons = (await Promise.all(promises)).map(this._toNumber.bind(this));
+    return Offer.fromResult({ id, offeredCryptomons, ...offer });
   }
 
   async getMarketplaceCryptomons(max: number): Promise<Cryptomon[]> {
@@ -104,39 +122,46 @@ export default class CryptomonGame {
     return cryptomons.filter(c => c.isReadyToFight); // check if they're still ready to fight
   }
 
-  async makeOffer(offer: Offer): Promise<void> {
-    const { cryptomonId, price: value, offeredCryptomons, buyer: from } = offer;
-    await this._contract.methods.makeOffer(cryptomonId, offeredCryptomons).send({ from, value });
+  // ///////////////////////////
+  // Init starter
+  // ///////////////////////////
+
+  async initStarterCryptomon(name: string, element: CryptomonElement): Promise<void> {
+    const value = await this.getStarterCryptomonCost();
+    await this._methods.initStarterCryptomon(name, element).send({ value });
   }
 
-  async getOffer(id: number): Promise<Offer | null> {
-    const offer = await this._contract.methods.offers(id).call();
-    if (this._isEmptyAddress(offer.buyer)) return null;
-    const count = await this._contract.methods.getOfferedCryptomonsCount(id).call();
-    const promises = Array(this._toNumber(count))
-      .map((v, i) => this._contract.methods.getOfferedCryptomonByIndex(id, i).call());
-    const offeredCryptomons = (await Promise.all(promises)).map(this._toNumber.bind(this));
-    return Offer.fromResult({ id, offeredCryptomons, ...offer });
+  // ///////////////////////////
+  // Trading
+  // ///////////////////////////
+
+  async sellCryptomon(id: number): Promise<void> {
+    await this._methods.sell(id).send();
+  }
+
+  async makeOffer(offer: Offer): Promise<void> {
+    const { cryptomonId, price: value, offeredCryptomons, buyer: from } = offer;
+    await this._methods.makeOffer(cryptomonId, offeredCryptomons).send({ from, value });
   }
 
   async acceptOffer(id: number): Promise<void> {
-    const from = this.defaultAccount;
-    await this._contract.methods.acceptOffer(id).send({ from });
+    await this._methods.acceptOffer(id).send();
   }
 
   async rejectOffer(id: number): Promise<void> {
-    const from = this.defaultAccount;
-    await this._contract.methods.rejectOffer(id).send({ from });
+    await this._methods.rejectOffer(id).send();
   }
 
   async withdrawOffer(id: number): Promise<void> {
-    const from = this.defaultAccount;
-    await this._contract.methods.withdrawOffer(id).send({ from });
+    await this._methods.withdrawOffer(id).send();
   }
 
+  // ///////////////////////////
+  // Breeding
+  // ///////////////////////////
+
   async breed(parent1: number, parent2: number, name: string) {
-    const from = this.defaultAccount;
-    await this._contract.methods.breed(parent1, parent2, name).send({ from });
+    await this._methods.breed(parent1, parent2, name).send();
   }
 
   // ///////////////////////////
@@ -144,13 +169,11 @@ export default class CryptomonGame {
   // ///////////////////////////
 
   async share(id: number, coOwner: string) {
-    const from = this.defaultAccount;
-    await this._contract.methods.share(id, coOwner).send({ from });
+    await this._methods.share(id, coOwner).send();
   }
 
   async endSharing(id: number) {
-    const from = this.defaultAccount;
-    await this._contract.methods.endSharing(id).send({ from });
+    await this._methods.endSharing(id).send();
   }
 
   // ///////////////////////////
@@ -158,13 +181,11 @@ export default class CryptomonGame {
   // ///////////////////////////
 
   async readyToFight(id: number) {
-    const from = this.defaultAccount;
-    await this._contract.methods.readyToFight(id).send({ from });
+    await this._methods.readyToFight(id).send();
   }
 
   async leaveFight(id: number) {
-    const from = this.defaultAccount;
-    await this._contract.methods.leaveFight(id).send({ from });
+    await this._methods.leaveFight(id).send();
   }
 
   // UTILITY METHODS
