@@ -1,9 +1,18 @@
 pragma solidity >=0.6.0 <0.7.0;
 
 contract CryptomonsGame {
+
+    //////////////////////////////////////
+    // ENUMS
+    //////////////////////////////////////
+
     enum Element {Fire, Water, Earth, Electricity, Air}
 
     enum State {Idle, OnSale, InAnOffer, Shared, ReadyToFight, InAChallenge}
+
+    //////////////////////////////////////
+    // STRUCTS
+    //////////////////////////////////////
 
     struct Cryptomon {
         uint id;
@@ -32,6 +41,10 @@ contract CryptomonsGame {
         uint stake;
         uint challengerId;
     }
+
+    //////////////////////////////////////
+    // STATE VARIABLES
+    //////////////////////////////////////
 
     uint public starterCryptomonCost = 1 ether;  // cost of creating a starter cryptomon
 
@@ -134,7 +147,7 @@ contract CryptomonsGame {
     }
 
     //////////////////////////////////////
-    // PUBLIC API: GETTERS
+    // PUBLIC GETTERS
     //////////////////////////////////////
 
     function isOwnerInitialized(address owner) public view returns (bool) {
@@ -164,7 +177,7 @@ contract CryptomonsGame {
     }
 
     //////////////////////////////////////
-    // PUBLIC API: WITHDRAW FROM BALANCE
+    // FEATURE: WITHDRAW FROM BALANCE
     //////////////////////////////////////
 
     function getBalance() public view returns (uint balance) {
@@ -184,7 +197,7 @@ contract CryptomonsGame {
     }
 
     //////////////////////////////////////
-    // PUBLIC API: INIT STARTER
+    // FEATURE: INIT STARTER
     //////////////////////////////////////
 
     function initStarterCryptomon(string calldata name, Element element) external payable {
@@ -199,8 +212,24 @@ contract CryptomonsGame {
         emit StarterCryptomonCreated(starter.id);
     }
 
+    function createCryptomon(address owner, Element primaryElement, Element secondaryElement, string memory name, uint health, uint strength)
+    private returns (Cryptomon storage cryptomon) {
+        require(totalCryptomons < max, "Cannot create any more Cryptomons in this game.");
+        cryptomon = cryptomons[totalCryptomons];
+        cryptomon.id = totalCryptomons;
+        cryptomon.owner = owner;
+        cryptomon.coOwner = address(0x0);
+        cryptomon.primaryElement = primaryElement;
+        cryptomon.secondaryElement = secondaryElement;
+        cryptomon.name = name;
+        cryptomon.health = health;
+        cryptomon.strength = strength;
+        owners[owner].cryptomonIds.push(cryptomon.id);
+        totalCryptomons++;
+    }
+
     //////////////////////////////////////
-    // PUBLIC API: TRADING
+    // FEATURE: TRADING
     //////////////////////////////////////
 
     /// @notice Puts a Cryptomon up for sale
@@ -286,8 +315,21 @@ contract CryptomonsGame {
         emit OfferWithdrawn(cryptomonId);
     }
 
+    function cancelOffer(uint cryptomonId) private {
+        Offer memory offer = offers[cryptomonId];
+        delete offers[cryptomonId];
+
+        // buyer's cryptomons are no longer in an offer
+        for (uint i = 0; i < offer.cryptomonIds.length; i++) {
+            cryptomons[offer.cryptomonIds[i]].state = State.Idle;
+        }
+
+        // refund buyer's deposit
+        addToBalance(offer.buyer, offer.price);
+    }
+
     //////////////////////////////////////
-    // PUBLIC API: BREEDING
+    // FEATURE: BREEDING
     //////////////////////////////////////
 
     function breed(uint parent1Id, uint parent2Id, string calldata name)
@@ -302,8 +344,15 @@ contract CryptomonsGame {
         emit CryptomonBirth(cryptomon.id);
     }
 
+    function transferOwnership(uint cryptomonId, address to) private {
+        address from = cryptomons[cryptomonId].owner;
+        cryptomons[cryptomonId].owner = to;
+        owners[to].cryptomonIds.push(cryptomonId);
+        deleteElementFromArray(owners[from].cryptomonIds, cryptomonId);
+    }
+
     //////////////////////////////////////
-    // PUBLIC API: FIGHTING
+    // FEATURE: FIGHTING
     //////////////////////////////////////
 
     function readyToFight(uint cryptomonId)
@@ -388,7 +437,7 @@ contract CryptomonsGame {
     }
 
     //////////////////////////////////////
-    // PUBLIC API: SHARING
+    // FEATURE: SHARING
     //////////////////////////////////////
 
     function share(uint cryptomonId, address to)
@@ -406,46 +455,6 @@ contract CryptomonsGame {
         cryptomons[cryptomonId].coOwner = address(0x0);
         cryptomons[cryptomonId].state = State.Idle;
         deleteElementFromArray(coOwners[coOwner], cryptomonId);
-    }
-
-    //////////////////////////////////////
-    // INTERNAL FUNCTIONS
-    //////////////////////////////////////
-
-    function transferOwnership(uint cryptomonId, address to) private {
-        address from = cryptomons[cryptomonId].owner;
-        cryptomons[cryptomonId].owner = to;
-        owners[to].cryptomonIds.push(cryptomonId);
-        deleteElementFromArray(owners[from].cryptomonIds, cryptomonId);
-    }
-
-    function createCryptomon(address owner, Element primaryElement, Element secondaryElement, string memory name, uint health, uint strength)
-    private returns (Cryptomon storage cryptomon) {
-        require(totalCryptomons < max, "Cannot create any more Cryptomons in this game.");
-        cryptomon = cryptomons[totalCryptomons];
-        cryptomon.id = totalCryptomons;
-        cryptomon.owner = owner;
-        cryptomon.coOwner = address(0x0);
-        cryptomon.primaryElement = primaryElement;
-        cryptomon.secondaryElement = secondaryElement;
-        cryptomon.name = name;
-        cryptomon.health = health;
-        cryptomon.strength = strength;
-        owners[owner].cryptomonIds.push(cryptomon.id);
-        totalCryptomons++;
-    }
-
-    function cancelOffer(uint cryptomonId) private {
-        Offer memory offer = offers[cryptomonId];
-        delete offers[cryptomonId];
-
-        // buyer's cryptomons are no longer in an offer
-        for (uint i = 0; i < offer.cryptomonIds.length; i++) {
-            cryptomons[offer.cryptomonIds[i]].state = State.Idle;
-        }
-
-        // refund buyer's deposit
-        addToBalance(offer.buyer, offer.price);
     }
 
     //////////////////////////////////////
