@@ -8,6 +8,7 @@ enum Actions {
   FetchCryptomonsByOwner = 'fetchCryptomonsByOwner',
   FetchCryptomonsByCoOwner = 'fetchCryptomonsByCoOwner',
   FetchMarketplaceCryptomons = 'fetchMarketplaceCryptomons',
+  FetchBattlegroundCryptomons = 'fetchBattlegroundCryptomons',
 
   // Trading
   SellCryptomon = 'sellCryptomon',
@@ -22,6 +23,10 @@ enum Actions {
   // Sharing
   Share = 'share',
   EndSharing = 'endSharing',
+
+  // Fighting
+  ReadyToFight = 'readyToFight',
+  LeaveFight = 'leaveFight',
 }
 
 export default Actions;

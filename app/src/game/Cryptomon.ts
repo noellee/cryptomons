@@ -57,6 +57,18 @@ export default class Cryptomon {
     return this._state === CryptomonState.OnSale;
   }
 
+  public get isReadyToFight(): boolean {
+    return this._state === CryptomonState.ReadyToFight;
+  }
+
+  public set isReadyToFight(value) {
+    this._state = value ? CryptomonState.ReadyToFight : CryptomonState.Idle;
+  }
+
+  public get isInAChallenge(): boolean {
+    return this._state === CryptomonState.InAChallenge;
+  }
+
   public set isOnSale(value) {
     this._state = value ? CryptomonState.OnSale : CryptomonState.Idle;
   }

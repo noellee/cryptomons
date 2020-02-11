@@ -49,9 +49,7 @@ export default class CryptomonGame {
   }
 
   async getCryptomonsByCoOwner(coOwner: string): Promise<Cryptomon[]> {
-    console.log('here');
     const ids = await this.getCryptomonIdsByCoOwner(coOwner);
-    console.log('ids', ids);
     return this.getCryptomonsByIds(ids);
   }
 
@@ -94,6 +92,16 @@ export default class CryptomonGame {
       .map(id => id.toNumber());
     const cryptomons = await this.getCryptomonsByIds(ids);
     return cryptomons.filter(c => c.isOnSale); // check if they're still on sale
+  }
+
+  async getBattlegroundCryptomons() {
+    const events = await this._contract.getPastEvents('CryptomonReadyToFight', { fromBlock: 0 });
+    const ids = events
+      .map(event => event.returnValues.id)
+      .map(this._web3.utils.toBN)
+      .map(id => id.toNumber());
+    const cryptomons = await this.getCryptomonsByIds(ids);
+    return cryptomons.filter(c => c.isReadyToFight); // check if they're still ready to fight
   }
 
   async makeOffer(offer: Offer): Promise<void> {
@@ -143,6 +151,20 @@ export default class CryptomonGame {
   async endSharing(id: number) {
     const from = this.defaultAccount;
     await this._contract.methods.endSharing(id).send({ from });
+  }
+
+  // ///////////////////////////
+  // Fighting
+  // ///////////////////////////
+
+  async readyToFight(id: number) {
+    const from = this.defaultAccount;
+    await this._contract.methods.readyToFight(id).send({ from });
+  }
+
+  async leaveFight(id: number) {
+    const from = this.defaultAccount;
+    await this._contract.methods.leaveFight(id).send({ from });
   }
 
   // UTILITY METHODS

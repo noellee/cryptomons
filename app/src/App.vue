@@ -7,7 +7,8 @@
     </h1>
     <div id="nav">
       <router-link to="/">Home</router-link> |
-      <router-link to="/marketplace">Marketplace</router-link>
+      <router-link to="/marketplace">Marketplace</router-link> |
+      <router-link to="/battleground">Battleground</router-link>
     </div>
     <router-view v-if="isReady()"/>
     <h3 v-else>Loading...</h3>

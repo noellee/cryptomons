@@ -12,18 +12,14 @@ export default class DropdownButtonGroup extends Vue {
 
   render() {
     const h = this.$createElement;
-    const buttons = this.isOpened ? this.$slots.default || [] : [];
-    return h(
-      'div',
-      {
-        class: 'dropdown-button-group',
-        on: { blur: this.closeDropdown },
-      },
-      [
-        this.renderMainButton(),
-        h('div', { class: 'buttons' }, buttons),
-      ],
-    );
+    const buttons = this.$slots.default || [];
+    return h('div', { class: 'dropdown-button-group' },
+      buttons.length === 1
+        ? buttons
+        : [
+          this.renderMainButton(),
+          h('div', { class: 'buttons' }, this.isOpened ? buttons : []),
+        ]);
   }
 
   renderMainButton() {

@@ -358,6 +358,7 @@ contract CryptomonsGame {
     function readyToFight(uint cryptomonId)
     external cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isIdle(cryptomonId) {
         cryptomons[cryptomonId].state = State.ReadyToFight;
+        emit CryptomonReadyToFight(cryptomonId);
     }
 
     function leaveFight(uint cryptomonId)
@@ -489,5 +490,6 @@ contract CryptomonsGame {
     event OfferWithdrawn(uint id);
     event CryptomonPutOnSale(uint id);
     event CryptomonBirth(uint id);
+    event CryptomonReadyToFight(uint id);
     event Fight(uint opponentId, uint challengerId, uint winnerId, address winnerOwner);
 }

@@ -1,7 +1,15 @@
 import Vue from 'vue';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import {
-  faAngleDown, faAngleUp, faBaby, faCommentsDollar, faEye, faFistRaised, faHandshake, faHeartBroken,
+  faAngleDown,
+  faAngleUp,
+  faBaby,
+  faCommentsDollar,
+  faDoorOpen,
+  faEye,
+  faFistRaised,
+  faHandshake,
+  faHeartBroken,
 } from '@fortawesome/free-solid-svg-icons';
 import { faEthereum } from '@fortawesome/free-brands-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
@@ -21,6 +29,7 @@ library.add(
   faBaby,
   faHandshake,
   faHeartBroken,
+  faDoorOpen,
 );
 Vue.component('fa-icon', FontAwesomeIcon);
 

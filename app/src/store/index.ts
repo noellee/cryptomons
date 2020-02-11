@@ -14,9 +14,12 @@ interface RootState {
   cryptomons: Record<number, Cryptomon>
   fetchedOwners: string[]
   hasFetchedMarketplace: boolean,
+  hasFetchedBattleground: boolean,
   web3: Web3 | null
   game: CryptomonGame | null
 }
+
+type Updater = (cryptomon: Cryptomon) => void;
 
 export default new Vuex.Store<RootState>({
   state: {
@@ -24,12 +27,14 @@ export default new Vuex.Store<RootState>({
     cryptomons: {},
     fetchedOwners: [],
     hasFetchedMarketplace: false,
+    hasFetchedBattleground: false,
     web3: null,
     game: null,
   },
   getters: {
     [Getters.HasFetchedForOwner]: state => (owner: string) => state.fetchedOwners.includes(owner),
     [Getters.HasFetchedMarketplace]: state => state.hasFetchedMarketplace,
+    [Getters.HasFetchedBattleground]: state => state.hasFetchedBattleground,
     [Getters.GetCryptomonById]: state => (id: number) => state.cryptomons[id],
     [Getters.GetCryptomonsByOwner]: state => (owner: string) => (
       _.filter(state.cryptomons, c => c.owner === owner)
@@ -38,6 +43,9 @@ export default new Vuex.Store<RootState>({
       _.filter(state.cryptomons, c => c.coOwner === coOwner)
     ),
     [Getters.MarketplaceCryptomons]: state => _.values(state.cryptomons).filter(c => c.isOnSale),
+    [Getters.BattlegroundCryptomons]: state => (
+      _.values(state.cryptomons).filter(c => c.isReadyToFight)
+    ),
     [Getters.IsWeb3Available]: state => () => state.web3 !== null,
     [Getters.IsOwnerInitialized]: state => state.ownerIsInitialized,
     [Getters.DefaultAccount]: state => state.game?.defaultAccount,
@@ -48,6 +56,9 @@ export default new Vuex.Store<RootState>({
     },
     updateHasFetchedMarketplace: (state, hasFetched: boolean) => {
       state.hasFetchedMarketplace = hasFetched;
+    },
+    updateHasFetchedBattleground: (state, hasFetched: boolean) => {
+      state.hasFetchedBattleground = hasFetched;
     },
     addFetchedOwner: (state, payload: { owner: string }) => {
       state.fetchedOwners.push(payload.owner);
@@ -61,10 +72,10 @@ export default new Vuex.Store<RootState>({
         ..._.keyBy(payload.cryptomons, c => c.id),
       };
     },
-    sellCryptomon: (state, payload: { id: number }) => {
+    updateCryptomon: (state, payload: { id: number, updater: Updater}) => {
       const cryptomon = state.cryptomons[payload.id];
       if (cryptomon === undefined) throw new TypeError();
-      cryptomon.isOnSale = true;
+      payload.updater(cryptomon);
       state.cryptomons = {
         ...state.cryptomons,
       };
@@ -124,6 +135,12 @@ export default new Vuex.Store<RootState>({
       commit('updateCryptomons', { cryptomons });
       commit('updateHasFetchedMarketplace', true);
     },
+    [Actions.FetchBattlegroundCryptomons]: async ({ state, commit }) => {
+      if (!state.game) throw new TypeError();
+      const cryptomons = await state.game.getBattlegroundCryptomons();
+      commit('updateCryptomons', { cryptomons });
+      commit('updateHasFetchedBattleground', true);
+    },
 
     // ///////////////////////////
     // Trading
@@ -132,7 +149,8 @@ export default new Vuex.Store<RootState>({
     [Actions.SellCryptomon]: async ({ state, commit }, payload: { id: number }) => {
       if (!state.game) throw new TypeError();
       await state.game.sellCryptomon(payload.id);
-      commit('sellCryptomon', { id: payload.id });
+      const updater: Updater = (cryptomon) => { cryptomon.isOnSale = true; };
+      commit('updateCryptomon', { id: payload.id, updater });
     },
     [Actions.MakeOffer]: async ({ state, commit }, offer: Offer) => {
       if (!state.game) throw new TypeError();
@@ -185,6 +203,23 @@ export default new Vuex.Store<RootState>({
       if (!state.game) throw new TypeError();
       await state.game.endSharing(id);
       dispatch(Actions.FetchCryptomonsByOwner);
+    },
+
+    // ///////////////////////////
+    // Fighting
+    // ///////////////////////////
+
+    [Actions.ReadyToFight]: async ({ state, commit }, id: number) => {
+      if (!state.game) throw new TypeError();
+      await state.game.readyToFight(id);
+      const updater: Updater = (cryptomon) => { cryptomon.isReadyToFight = true; };
+      commit('updateCryptomon', { id, updater });
+    },
+    [Actions.LeaveFight]: async ({ state, commit }, id: number) => {
+      if (!state.game) throw new TypeError();
+      await state.game.leaveFight(id);
+      const updater: Updater = (cryptomon) => { cryptomon.isReadyToFight = false; };
+      commit('updateCryptomon', { id, updater });
     },
   },
 });
