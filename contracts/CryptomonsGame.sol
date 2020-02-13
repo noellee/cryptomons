@@ -2,17 +2,17 @@ pragma solidity >=0.6.0 <0.7.0;
 
 contract CryptomonsGame {
 
-    //////////////////////////////////////
+    // ////////////////////////////////////
     // ENUMS
-    //////////////////////////////////////
+    // ////////////////////////////////////
 
     enum Element {Fire, Water, Earth, Electricity, Air}
 
     enum State {Idle, OnSale, InAnOffer, Shared, ReadyToFight, InAChallenge}
 
-    //////////////////////////////////////
+    // ////////////////////////////////////
     // STRUCTS
-    //////////////////////////////////////
+    // ////////////////////////////////////
 
     struct Cryptomon {
         uint id;
@@ -42,9 +42,9 @@ contract CryptomonsGame {
         uint challengerId;
     }
 
-    //////////////////////////////////////
+    // ////////////////////////////////////
     // STATE VARIABLES
-    //////////////////////////////////////
+    // ////////////////////////////////////
 
     uint public starterCryptomonCost = 1 ether;  // cost of creating a starter cryptomon
 
@@ -69,9 +69,9 @@ contract CryptomonsGame {
     // maps account address => amount of wei owed to them
     mapping(address => uint) private balances;
 
-    //////////////////////////////////////
+    // ////////////////////////////////////
     // MODIFIERS
-    //////////////////////////////////////
+    // ////////////////////////////////////
 
     modifier isIdle(uint cryptomonId) {
         require(cryptomons[cryptomonId].state == State.Idle, "Cryptomon must be in idle state.");
@@ -146,9 +146,9 @@ contract CryptomonsGame {
         _;
     }
 
-    //////////////////////////////////////
+    // ////////////////////////////////////
     // PUBLIC GETTERS
-    //////////////////////////////////////
+    // ////////////////////////////////////
 
     function isOwnerInitialized(address owner) public view returns (bool) {
         return owners[owner].isInitialized;
@@ -176,14 +176,18 @@ contract CryptomonsGame {
         cryptomonId = offers[id].cryptomonIds[index];
     }
 
-    //////////////////////////////////////
-    // FEATURE: WITHDRAW FROM BALANCE
-    //////////////////////////////////////
+    // ////////////////////////////////////
+    // FEATURE: ACCOUNT BALANCE
+    // ////////////////////////////////////
 
+    // @notice Gets the balance of the sender.
+    // @return The balance, in wei
     function getBalance() public view returns (uint balance) {
         balance = balances[msg.sender];
     }
 
+    // @notice Withdraw from the sender's balance
+    // @param amount The amount of wei to withdraw
     function withdrawFunds(uint amount) external {
         require(amount <= getBalance(), "Cannot withdraw more than the account balance.");
         balances[msg.sender] -= amount;
@@ -196,10 +200,16 @@ contract CryptomonsGame {
         balances[account] = result;
     }
 
-    //////////////////////////////////////
+    // ////////////////////////////////////
     // FEATURE: INIT STARTER
-    //////////////////////////////////////
+    // ////////////////////////////////////
 
+    /// @notice Initialize a starter Cryptomon. This method can only be called if the calling
+    /// account has never called it before. A fee (starterCryptomonCost) is required to initialize a
+    /// starter Cryptomon.
+    /// @param name The name of the Cryptomon.
+    /// @param element The element of the Cryptomon. Note that this will be both the primary and the
+    /// secondary element.
     function initStarterCryptomon(string calldata name, Element element) external payable {
         require(msg.value == starterCryptomonCost, "Sent eth does not match starter cryptomon cost");
 
@@ -228,11 +238,11 @@ contract CryptomonsGame {
         totalCryptomons++;
     }
 
-    //////////////////////////////////////
+    // ////////////////////////////////////
     // FEATURE: TRADING
-    //////////////////////////////////////
+    // ////////////////////////////////////
 
-    /// @notice Puts a Cryptomon up for sale
+    /// @notice Put a Cryptomon up for sale.
     /// @param id The id of the Cryptomon to sell
     function sell(uint id)
     external cryptomonExists(id) onlyOwner(id) isIdle(id) isNotShared(id) {
@@ -242,7 +252,8 @@ contract CryptomonsGame {
 
     /// @notice Make an offer to buy a Cryptomon. The value sent is the offered price.
     /// @param cryptomonId The id of the Cryptomon to buy
-    /// @param cryptomonIds The ids of the buyer's Cryptomons to be offered to exchange for the seller's Cryptomon
+    /// @param cryptomonIds The ids of the buyer's Cryptomons to be offered to exchange for the
+    /// seller's Cryptomon
     function makeOffer(uint cryptomonId, uint[] calldata cryptomonIds)
     external cryptomonExists(cryptomonId) payable {
 
@@ -270,7 +281,8 @@ contract CryptomonsGame {
         emit OfferMade(cryptomonId);
     }
 
-    /// @notice Accept an offer that has been made to a Cryptomon. Only the owner of the Cryptomon can call this.
+    /// @notice Accept an offer that has been made to a Cryptomon. Only the owner of the Cryptomon
+    /// can call this.
     /// @param cryptomonId The id of the Cryptomon to accept the offer for
     function acceptOffer(uint cryptomonId)
     external cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isUnderOffer(cryptomonId) {
@@ -298,7 +310,8 @@ contract CryptomonsGame {
         emit OfferAccepted(cryptomonId);
     }
 
-    /// @notice Reject an offer that has been made to a Cryptomon. Only the owner of the Cryptomon can call this.
+    /// @notice Reject an offer that has been made to a Cryptomon. Only the owner of the Cryptomon
+    /// can call this.
     /// @param cryptomonId The id of the Cryptomon to reject the offer for
     function rejectOffer(uint cryptomonId)
     external cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isUnderOffer(cryptomonId) {
@@ -328,14 +341,27 @@ contract CryptomonsGame {
         addToBalance(offer.buyer, offer.price);
     }
 
-    //////////////////////////////////////
-    // FEATURE: BREEDING
-    //////////////////////////////////////
+    function transferOwnership(uint cryptomonId, address to) private {
+        address from = cryptomons[cryptomonId].owner;
+        cryptomons[cryptomonId].owner = to;
+        owners[to].cryptomonIds.push(cryptomonId);
+        deleteElementFromArray(owners[from].cryptomonIds, cryptomonId);
+    }
 
+    // ////////////////////////////////////
+    // FEATURE: BREEDING
+    // ////////////////////////////////////
+
+    /// @notice Breed two Cryptomons to get a new one. The parent Cryptomons must either be owned or
+    /// shared to the caller.
+    /// @param parent1Id The id of the first parent
+    /// @param parent2Id The id of the second parent
+    /// @param name Name of the newborn
     function breed(uint parent1Id, uint parent2Id, string calldata name)
     external
     onlyOwnerOrCoOwner(parent1Id) canBreed(parent1Id)
     onlyOwnerOrCoOwner(parent2Id) canBreed(parent2Id) {
+        require(parent1Id != parent2Id, "Cannot breed with oneself.");
         uint health = (cryptomons[parent1Id].health + cryptomons[parent2Id].health) / 2 + 10;
         uint strength = (cryptomons[parent1Id].strength + cryptomons[parent2Id].strength) / 2 + 10;
         Element pElement = cryptomons[parent1Id].primaryElement;
@@ -344,30 +370,29 @@ contract CryptomonsGame {
         emit CryptomonBirth(cryptomon.id);
     }
 
-    function transferOwnership(uint cryptomonId, address to) private {
-        address from = cryptomons[cryptomonId].owner;
-        cryptomons[cryptomonId].owner = to;
-        owners[to].cryptomonIds.push(cryptomonId);
-        deleteElementFromArray(owners[from].cryptomonIds, cryptomonId);
-    }
-
-    //////////////////////////////////////
+    // ////////////////////////////////////
     // FEATURE: FIGHTING
-    //////////////////////////////////////
+    // ////////////////////////////////////
 
+    /// @notice Mark a Cryptomon to be ready to fight.
+    /// @param cryptomonId The id of the Cryptomon
     function readyToFight(uint cryptomonId)
     external cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isIdle(cryptomonId) {
         cryptomons[cryptomonId].state = State.ReadyToFight;
         emit CryptomonReadyToFight(cryptomonId);
     }
 
+    /// @notice Mark a Cryptomon to be NOT ready to fight.
+    /// @param cryptomonId The id of the Cryptomon
     function leaveFight(uint cryptomonId)
     external cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isReadyToFight(cryptomonId) {
         cryptomons[cryptomonId].state = State.Idle;
     }
 
-    // @param opponentId The id of the Cryptomon being challenged
-    // @param challenger The id of the challenger Cryptomon
+    /// @notice Challenge a Cryptomon to a fight. The value sent is used as the betting stake. The
+    /// stake must be non-zero.
+    /// @param opponentId The id of the Cryptomon being challenged
+    /// @param challengerId The id of the challenger Cryptomon
     function challenge(uint opponentId, uint challengerId)
     external payable
     cryptomonExists(opponentId) isReadyToFight(opponentId)
@@ -384,11 +409,15 @@ contract CryptomonsGame {
         ChallengeCreated(opponent.id, challenger.id);
     }
 
+    /// @notice Reject a challenge. Can only be called by the owner of the challenged Cryptomon.
+    /// @param cryptomonId The id of the Cryptomon
     function rejectChallenge(uint cryptomonId)
     external cryptomonExists(cryptomonId) isInAChallenge(cryptomonId) onlyOwner(cryptomonId) {
         removeChallenge(cryptomonId);
     }
 
+    /// @notice Withdraw from a challenge. Can only be called by the owner of the challenger.
+    /// @param cryptomonId The id of the challenger Cryptomon
     function withdrawChallenge(uint cryptomonId)
     external cryptomonExists(cryptomonId) isInAChallenge(cryptomonId) {
         require(
@@ -405,6 +434,8 @@ contract CryptomonsGame {
         delete challenges[cryptomonId];
     }
 
+    /// @notice Accept a challenge. Can only be called by the owner of the challenged Cryptomon.
+    /// @param cryptomonId The id of the Cryptomon
     function acceptChallenge(uint cryptomonId)
     external payable
     cryptomonExists(cryptomonId) isInAChallenge(cryptomonId) onlyOwner(cryptomonId) {
@@ -435,10 +466,14 @@ contract CryptomonsGame {
         return health - deduct;
     }
 
-    //////////////////////////////////////
+    // ////////////////////////////////////
     // FEATURE: SHARING
-    //////////////////////////////////////
+    // ////////////////////////////////////
 
+    /// @notice Share a Cryptomon with another account, if it's not already shared. Can only be
+    /// called by the owner of the Cryptomon.
+    /// @param cryptomonId The id of the Cryptomon to share.
+    /// @param to The account address to share to.
     function share(uint cryptomonId, address to)
     external cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isIdle(cryptomonId) {
         require(to != address(0x0), "Cannot share with empty address.");
@@ -448,6 +483,8 @@ contract CryptomonsGame {
         coOwners[to].push(cryptomonId);
     }
 
+    /// @notice "Un-share" a Cryptomon. Regain sole ownership of a Cryptomon.
+    /// @param cryptomonId The id of the Cryptomon.
     function endSharing(uint cryptomonId)
     external cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isShared(cryptomonId) {
         address coOwner = cryptomons[cryptomonId].coOwner;
@@ -456,9 +493,9 @@ contract CryptomonsGame {
         deleteElementFromArray(coOwners[coOwner], cryptomonId);
     }
 
-    //////////////////////////////////////
+    // ////////////////////////////////////
     // MISC HELPERS
-    //////////////////////////////////////
+    // ////////////////////////////////////
 
     function findIndex(uint[] storage array, uint element) private view returns (uint) {
         for (uint i = 0; i < array.length; i++) {
@@ -477,9 +514,9 @@ contract CryptomonsGame {
         array.pop();
     }
 
-    //////////////////////////////////////
+    // ////////////////////////////////////
     // EVENTS
-    //////////////////////////////////////
+    // ////////////////////////////////////
 
     event StarterCryptomonCreated(uint id);
     event OfferMade(uint id);
