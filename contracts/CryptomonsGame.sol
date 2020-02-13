@@ -150,43 +150,45 @@ contract CryptomonsGame {
     // PUBLIC GETTERS
     // ////////////////////////////////////
 
-    function isOwnerInitialized(address owner) public view returns (bool) {
-        return owners[owner].isInitialized;
+    /// @notice Get the initialization status of an account, aka if the account already has
+    /// initialized a starter Cryptomon.
+    /// @return isInitialized True if the owner has already been initialized, false otherwise.
+    function isOwnerInitialized(address owner) public view returns (bool isInitialized) {
+        isInitialized = owners[owner].isInitialized;
     }
 
-    function getCryptomonCountByOwner(address owner) public view returns (uint) {
-        return owners[owner].cryptomonIds.length;
-    }
-
+    /// @notice Get Cryptomons owned by an account
+    /// @param owner The account
+    /// @return ids The ids of the owned Cryptomons
     function getCryptomonIdsByOwner(address owner) public view returns (uint[] memory ids) {
         ids = owners[owner].cryptomonIds;
     }
 
+    /// @notice Get Cryptomons co-owned by (shared to) an account
+    /// @param coOwner The account
+    /// @return ids The ids of the co-owned Cryptomons
     function getCryptomonIdsByCoOwner(address coOwner) public view returns (uint[] memory ids) {
         ids = coOwners[coOwner];
     }
 
-    // todo: combine?
-    function getOfferedCryptomonsCount(uint id) public view returns (uint count) {
-        count = offers[id].cryptomonIds.length;
-    }
-
-    function getOfferedCryptomonByIndex(uint id, uint index) public view returns (uint cryptomonId) {
-        require(index < offers[id].cryptomonIds.length, "Index out of bounds.");
-        cryptomonId = offers[id].cryptomonIds[index];
+    /// @notice Get the offered Cryptomons
+    /// @param id The id of the on sale Cryptomon
+    /// @return ids The ids of the offered Cryptomons
+    function getOfferedCryptomons(uint id) public view returns (uint[] memory ids) {
+        ids = offers[id].cryptomonIds;
     }
 
     // ////////////////////////////////////
     // FEATURE: ACCOUNT BALANCE
     // ////////////////////////////////////
 
-    // @notice Gets the balance of the sender.
+    // @notice Gets the balance of the caller.
     // @return The balance, in wei
     function getBalance() public view returns (uint balance) {
         balance = balances[msg.sender];
     }
 
-    // @notice Withdraw from the sender's balance
+    // @notice Withdraw from the caller's balance
     // @param amount The amount of wei to withdraw
     function withdrawFunds(uint amount) external {
         require(amount <= getBalance(), "Cannot withdraw more than the account balance.");
