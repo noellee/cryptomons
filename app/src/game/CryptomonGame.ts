@@ -98,8 +98,9 @@ export default class CryptomonGame {
     if (this._isZero(offer.buyer)) return null;
     const count = await this._methods.getOfferedCryptomonsCount(id).call();
     const promises = Array(this._toNumber(count))
+      .fill(null)
       .map((v, i) => this._methods.getOfferedCryptomonByIndex(id, i).call());
-    const offeredCryptomons = (await Promise.all(promises)).map(this._toNumber.bind(this));
+    const offeredCryptomons = await Promise.all(promises);
     return Offer.fromResult({ id, offeredCryptomons, ...offer });
   }
 
@@ -243,11 +244,11 @@ export default class CryptomonGame {
 
   // UTILITY METHODS
 
-  private _toNumber(bnString: string) {
+  private _toNumber(bnString: string): number {
     return this._web3.utils.toBN(bnString).toNumber();
   }
 
-  private _isZero(value: string) {
+  private _isZero(value: string): boolean {
     return this._web3.utils.toBN(value).isZero();
   }
 }

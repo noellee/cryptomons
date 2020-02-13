@@ -72,10 +72,10 @@
       <IconButton v-if="canBuy" icon="comments-dollar" @click="openMakeOfferDialog">
         Make offer
       </IconButton>
-      <IconButton v-else-if="cryptomon.isInAnOffer" icon="eye" @click="openViewOfferDialog">
+      <IconButton v-else-if="cryptomon.isOnSale" icon="eye" @click="openViewOfferDialog">
         View offer
       </IconButton>
-      <button v-else-if="cryptomon.isOnSale" disabled class="secondary">Pending offer</button>
+      <button v-else-if="cryptomon.isInAnOffer" disabled class="secondary">Pending offer</button>
       <button v-else disabled class="secondary">Unavailable</button>
     </template>
     </DropdownButtonGroup>

@@ -372,6 +372,7 @@ contract CryptomonsGame {
     external payable
     cryptomonExists(opponentId) isReadyToFight(opponentId)
     cryptomonExists(challengerId) isReadyToFight(challengerId) onlyOwner(challengerId) {
+        require(msg.value > 0, "Stake must not be 0.");
         Cryptomon storage challenger = cryptomons[challengerId];
         Cryptomon storage opponent = cryptomons[opponentId];
         require(challenger.owner != opponent.owner, "Can't fight your own Cryptomons.");
@@ -380,6 +381,7 @@ contract CryptomonsGame {
         newChallenge.stake = msg.value;
         challenger.state = State.InAChallenge;
         opponent.state = State.InAChallenge;
+        ChallengeCreated(opponent.id, challenger.id);
     }
 
     function rejectChallenge(uint cryptomonId)
@@ -420,13 +422,9 @@ contract CryptomonsGame {
         if (challengerHealth > opponentHealth) {
             addToBalance(challenger.owner, _challenge.stake * 2);
             emit Fight(opponent.id, challenger.id, challenger.id, challenger.owner);
-        } else if (challengerHealth < opponentHealth) {
+        } else {
             addToBalance(opponent.owner, _challenge.stake * 2);
             emit Fight(opponent.id, challenger.id, opponent.id, opponent.owner);
-        } else {
-            addToBalance(opponent.owner, _challenge.stake);
-            addToBalance(challenger.owner, _challenge.stake);
-            emit Fight(opponent.id, challenger.id, 0, address(0x0));
         }
     }
 
@@ -491,5 +489,6 @@ contract CryptomonsGame {
     event CryptomonPutOnSale(uint id);
     event CryptomonBirth(uint id);
     event CryptomonReadyToFight(uint id);
+    event ChallengeCreated(uint opponentId, uint indexed challengerId);
     event Fight(uint opponentId, uint challengerId, uint winnerId, address winnerOwner);
 }
