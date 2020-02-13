@@ -33,6 +33,11 @@
       @challenge="closeChallengeDialog"
       @cancel="closeChallengeDialog"
     />
+    <ViewChallengeDialog
+      v-if="isViewChallengeDialogOpened"
+      :cryptomon="cryptomon"
+      @close-dialog="closeViewChallengeDialog"
+    />
 
     <DropdownButtonGroup dropdown-text="More options">
     <!--Idle and owned-->
@@ -59,7 +64,7 @@
 
     <!--Challenged-->
     <template v-else-if="cryptomon.isInAChallenge">
-      <IconButton @click="challenge" icon="eye">View challenge</IconButton>
+      <IconButton @click="openViewChallengeDialog" icon="eye">View challenge</IconButton>
     </template>
 
     <!--Otherwise-->
@@ -98,6 +103,7 @@ import ChallengeDialog from '@/components/dialogs/ChallengeDialog.vue';
     ViewOfferDialog: () => import('@/components/dialogs/ViewOfferDialog.vue'),
     MakeOfferDialog,
     ChallengeDialog,
+    ViewChallengeDialog: () => import('@/components/dialogs/ViewChallengeDialog.vue'),
   },
 })
 export default class CryptomonCard extends Vue {
@@ -112,6 +118,8 @@ export default class CryptomonCard extends Vue {
   isShareDialogOpened: boolean = false;
 
   isChallengeDialogOpened: boolean = false;
+
+  isViewChallengeDialogOpened: boolean = false;
 
   get defaultAccount() {
     return this.$store.getters[Getters.DefaultAccount];
@@ -150,11 +158,6 @@ export default class CryptomonCard extends Vue {
 
   public async leaveFight() {
     await this.$store.dispatch(Actions.LeaveFight, this.cryptomon.id);
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  public challenge() {
-    // todo
   }
 
   // Open and closing dialogs
@@ -197,6 +200,14 @@ export default class CryptomonCard extends Vue {
 
   public closeChallengeDialog() {
     this.isChallengeDialogOpened = false;
+  }
+
+  public openViewChallengeDialog() {
+    this.isViewChallengeDialogOpened = true;
+  }
+
+  public closeViewChallengeDialog() {
+    this.isViewChallengeDialogOpened = false;
   }
 }
 </script>

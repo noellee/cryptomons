@@ -69,7 +69,7 @@ export default class ViewOfferDialog extends Vue {
       .keys()
       .map(_.toNumber)
       .value();
-    await this.$store.dispatch(Actions.FetchCryptomonsById, missingIds);
+    await this.$store.dispatch(Actions.FetchCryptomonsByIds, missingIds);
   }
 
   public get isSeller() {

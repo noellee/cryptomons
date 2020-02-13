@@ -9,7 +9,7 @@ import {
   faEye,
   faFistRaised,
   faHandshake,
-  faHeartBroken,
+  faHeartBroken, faHome, faStore,
 } from '@fortawesome/free-solid-svg-icons';
 import { faEthereum } from '@fortawesome/free-brands-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
@@ -30,6 +30,8 @@ library.add(
   faHandshake,
   faHeartBroken,
   faDoorOpen,
+  faHome,
+  faStore,
 );
 Vue.component('fa-icon', FontAwesomeIcon);
 

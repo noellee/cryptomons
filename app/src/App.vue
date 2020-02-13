@@ -1,15 +1,14 @@
 <template>
   <div id="app">
     <AccountBalance v-if="isReady()" />
-    <h1>
-      Cryptomons!
-      <i class="tiny">Gotta catch'em all</i>
-    </h1>
-    <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/marketplace">Marketplace</router-link> |
-      <router-link to="/battleground">Battleground</router-link>
-    </div>
+    <header>
+      <img :src="require('@/assets/logo.png')" height="200px" id="logo">
+      <div id="nav">
+        <router-link to="/"><fa-icon icon="home" />Home</router-link>
+        <router-link to="/marketplace"><fa-icon icon="store" />Marketplace</router-link>
+        <router-link to="/battleground"><fa-icon icon="fist-raised" />Battleground</router-link>
+      </div>
+    </header>
     <router-view v-if="isReady()"/>
     <h3 v-else>Loading...</h3>
   </div>
@@ -54,17 +53,35 @@ body {
   color: #e1e1e1;
 }
 
+header {
+  display: flex;
+  align-items: center;
+}
+
+#logo {
+}
+
 #nav {
-  padding: 30px;
+  margin-top: 7em;
 }
 
 #nav a {
+  font-size: large;
   font-weight: bold;
-  color: #c1c1c1;
+  color: #f2f2f2;
+  padding: 8px 16px;
+  margin: 0 12px;
+  border-radius: 4px;
+  text-decoration: none;
 }
 
 #nav a.router-link-exact-active {
-  color: #42b983;
+  background: #d8ac29;
+  color: #f2f2f2;
+}
+
+#nav a > svg {
+  margin-right: 8px;
 }
 
 button {

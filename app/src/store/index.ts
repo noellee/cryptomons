@@ -6,12 +6,13 @@ import { getWeb3 } from '@/utils';
 import Getters from '@/store/getters';
 import Actions from '@/store/actions';
 import { Cryptomon, CryptomonElement, CryptomonGame, Offer } from '@/game';
+import Challenge from '@/game/Challenge';
 
 Vue.use(Vuex);
 
 interface RootState {
   ownerIsInitialized: boolean
-  cryptomons: Record<number, Cryptomon>
+  cryptomons: Record<string, Cryptomon>
   fetchedOwners: string[]
   hasFetchedMarketplace: boolean,
   hasFetchedBattleground: boolean,
@@ -35,12 +36,16 @@ export default new Vuex.Store<RootState>({
     [Getters.HasFetchedForOwner]: state => (owner: string) => state.fetchedOwners.includes(owner),
     [Getters.HasFetchedMarketplace]: state => state.hasFetchedMarketplace,
     [Getters.HasFetchedBattleground]: state => state.hasFetchedBattleground,
-    [Getters.GetCryptomonById]: state => (id: number) => state.cryptomons[id],
+    [Getters.GetCryptomonById]: state => (id: string) => state.cryptomons[id],
     [Getters.GetCryptomonsByOwner]: state => (owner: string) => (
       _.filter(state.cryptomons, c => c.owner === owner)
     ),
     [Getters.GetCryptomonsByCoOwner]: state => (coOwner: string) => (
       _.filter(state.cryptomons, c => c.coOwner === coOwner)
+    ),
+    [Getters.GetChallengeByChallengerId]: state => (id: string) => (
+      _(state.cryptomons)
+        .map(c => c.challenge).filter().find(c => (c as Challenge).challengerId === id)
     ),
     [Getters.MarketplaceCryptomons]: state => _.values(state.cryptomons).filter(c => c.isOnSale),
     [Getters.BattlegroundCryptomons]: state => (
@@ -72,7 +77,7 @@ export default new Vuex.Store<RootState>({
         ..._.keyBy(payload.cryptomons, c => c.id),
       };
     },
-    updateCryptomon: (state, payload: { id: number, updater: Updater}) => {
+    updateCryptomon: (state, payload: { id: string, updater: Updater}) => {
       const cryptomon = state.cryptomons[payload.id];
       if (cryptomon === undefined) throw new TypeError();
       payload.updater(cryptomon);
@@ -111,7 +116,7 @@ export default new Vuex.Store<RootState>({
       const isInitialized = await state.game.isOwnerInitialized();
       commit('updateOwnerStatus', isInitialized);
     },
-    [Actions.FetchCryptomonsById]: async ({ state, commit }, ids: number[]) => {
+    [Actions.FetchCryptomonsByIds]: async ({ state, commit }, ids: string[]) => {
       if (!state.game) throw new TypeError();
       const cryptomons = await state.game.getCryptomonsByIds(ids);
       commit('updateCryptomons', { cryptomons });
@@ -146,7 +151,7 @@ export default new Vuex.Store<RootState>({
     // Trading
     // ///////////////////////////
 
-    [Actions.SellCryptomon]: async ({ state, commit }, payload: { id: number }) => {
+    [Actions.SellCryptomon]: async ({ state, commit }, payload: { id: string }) => {
       if (!state.game) throw new TypeError();
       await state.game.sellCryptomon(payload.id);
       const updater: Updater = (cryptomon) => { cryptomon.isOnSale = true; };
@@ -157,7 +162,7 @@ export default new Vuex.Store<RootState>({
       await state.game.makeOffer(offer);
       commit('updateOffer', { id: offer.cryptomonId, offer });
     },
-    [Actions.AcceptOffer]: async ({ state, commit, dispatch }, id: number) => {
+    [Actions.AcceptOffer]: async ({ state, commit, dispatch }, id: string) => {
       if (!state.game) throw new TypeError();
       await state.game.acceptOffer(id);
 
@@ -165,14 +170,14 @@ export default new Vuex.Store<RootState>({
       const { offer } = sellerCryptomon;
       if (!offer) throw new TypeError();
 
-      dispatch(Actions.FetchCryptomonsById, [id, ...offer.offeredCryptomons]);
+      await dispatch(Actions.FetchCryptomonsByIds, [id, ...offer.offeredCryptomons]);
     },
-    [Actions.RejectOffer]: async ({ state, commit }, id: number) => {
+    [Actions.RejectOffer]: async ({ state, commit }, id: string) => {
       if (!state.game) throw new TypeError();
       await state.game.rejectOffer(id);
       commit('updateOffer', { id, offer: null });
     },
-    [Actions.WithdrawOffer]: async ({ state, commit }, id: number) => {
+    [Actions.WithdrawOffer]: async ({ state, commit }, id: string) => {
       if (!state.game) throw new TypeError();
       await state.game.withdrawOffer(id);
       commit('updateOffer', { id, offer: null });
@@ -183,10 +188,10 @@ export default new Vuex.Store<RootState>({
     // ///////////////////////////
 
     [Actions.Breed]: async ({ state, dispatch },
-      payload: { parent1: number, parent2: number, name: string}) => {
+      payload: { parent1: string, parent2: string, name: string}) => {
       if (!state.game) throw new TypeError();
       await state.game.breed(payload.parent1, payload.parent2, payload.name);
-      dispatch(Actions.FetchCryptomonsByOwner);
+      await dispatch(Actions.FetchCryptomonsByOwner);
     },
 
     // ///////////////////////////
@@ -194,40 +199,75 @@ export default new Vuex.Store<RootState>({
     // ///////////////////////////
 
     [Actions.Share]: async ({ state, dispatch },
-      payload: { id: number, coOwner: string }) => {
+      payload: { id: string, coOwner: string }) => {
       if (!state.game) throw new TypeError();
       await state.game.share(payload.id, payload.coOwner);
-      dispatch(Actions.FetchCryptomonsByOwner);
+      await dispatch(Actions.FetchCryptomonsByOwner);
     },
-    [Actions.EndSharing]: async ({ state, dispatch }, id: number) => {
+    [Actions.EndSharing]: async ({ state, dispatch }, id: string) => {
       if (!state.game) throw new TypeError();
       await state.game.endSharing(id);
-      dispatch(Actions.FetchCryptomonsByOwner);
+      await dispatch(Actions.FetchCryptomonsByOwner);
     },
 
     // ///////////////////////////
     // Fighting
     // ///////////////////////////
 
-    [Actions.ReadyToFight]: async ({ state, commit }, id: number) => {
+    [Actions.ReadyToFight]: async ({ state, commit }, id: string) => {
       if (!state.game) throw new TypeError();
       await state.game.readyToFight(id);
       const updater: Updater = (cryptomon) => { cryptomon.isReadyToFight = true; };
       commit('updateCryptomon', { id, updater });
     },
-    [Actions.LeaveFight]: async ({ state, commit }, id: number) => {
+    [Actions.LeaveFight]: async ({ state, commit }, id: string) => {
       if (!state.game) throw new TypeError();
       await state.game.leaveFight(id);
       const updater: Updater = (cryptomon) => { cryptomon.isReadyToFight = false; };
       commit('updateCryptomon', { id, updater });
     },
-    [Actions.Challenge]: async ({ state, commit },
-      payload: { opponentId: number, challengerId: number, stake: number }) => {
+    [Actions.Challenge]: async ({ state, dispatch },
+      payload: { opponentId: string, challengerId: string, stake: number }) => {
       if (!state.game) throw new TypeError();
       await state.game.challenge(payload.opponentId, payload.challengerId, payload.stake);
-      const updater: Updater = (cryptomon) => { cryptomon.isInAChallenge = false; };
-      commit('updateCryptomon', { id: payload.opponentId, updater });
-      commit('updateCryptomon', { id: payload.challengerId, updater });
+      await dispatch(Actions.FetchCryptomonsByIds, [payload.opponentId, payload.challengerId]);
+    },
+    [Actions.AcceptChallenge]: async ({ state, getters, commit },
+      payload: { id: string, stake: string }) => {
+      if (!state.game) throw new TypeError();
+      await state.game.acceptChallenge(payload.id, payload.stake);
+      const opponent: Cryptomon = getters[Getters.GetCryptomonById](payload.id);
+      const challengerId = opponent.challenge?.challengerId;
+      const updater: Updater = (cryptomon) => {
+        cryptomon.isReadyToFight = false;
+        cryptomon.challenge = null;
+      };
+      commit('updateCryptomon', { id: payload.id, updater });
+      commit('updateCryptomon', { id: challengerId, updater });
+    },
+    [Actions.RejectChallenge]: async ({ state, getters, commit }, id: string) => {
+      if (!state.game) throw new TypeError();
+      await state.game.rejectChallenge(id);
+      const opponent: Cryptomon = getters[Getters.GetCryptomonById](id);
+      const challengerId = opponent.challenge?.challengerId;
+      const updater: Updater = (cryptomon) => {
+        cryptomon.isReadyToFight = true;
+        cryptomon.challenge = null;
+      };
+      commit('updateCryptomon', { id, updater });
+      commit('updateCryptomon', { id: challengerId, updater });
+    },
+    [Actions.WithdrawChallenge]: async ({ state, getters, commit }, id: string) => {
+      if (!state.game) throw new TypeError();
+      await state.game.withdrawChallenge(id);
+      const opponent: Cryptomon = getters[Getters.GetCryptomonById](id);
+      const challengerId = opponent.challenge?.challengerId;
+      const updater: Updater = (cryptomon) => {
+        cryptomon.isReadyToFight = true;
+        cryptomon.challenge = null;
+      };
+      commit('updateCryptomon', { id, updater });
+      commit('updateCryptomon', { id: challengerId, updater });
     },
   },
 });

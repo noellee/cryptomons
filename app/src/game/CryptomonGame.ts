@@ -5,6 +5,8 @@ import getContract from '@/contracts/CryptomonsGameContract';
 import Cryptomon from './Cryptomon';
 import CryptomonElement from './CryptomonElement';
 import Offer from './Offer';
+import Challenge from './Challenge';
+import FightResult from '@/game/FightResult';
 
 export default class CryptomonGame {
   private _web3: Web3;
@@ -52,14 +54,12 @@ export default class CryptomonGame {
     return this._starterCost;
   }
 
-  async getCryptomonIds(owner: string): Promise<number[]> {
-    const ids: string[] = await this._methods.getCryptomonIdsByOwner(owner).call();
-    return ids.map(id => +id);
+  async getCryptomonIds(owner: string): Promise<string[]> {
+    return this._methods.getCryptomonIdsByOwner(owner).call();
   }
 
-  async getCryptomonIdsByCoOwner(coOwner: string): Promise<number[]> {
-    const ids: string[] = await this._methods.getCryptomonIdsByCoOwner(coOwner).call();
-    return ids.map(id => +id);
+  async getCryptomonIdsByCoOwner(coOwner: string): Promise<string[]> {
+    return this._methods.getCryptomonIdsByCoOwner(coOwner).call();
   }
 
   async getCryptomonsByOwner(owner: string): Promise<Cryptomon[]> {
@@ -77,24 +77,25 @@ export default class CryptomonGame {
     return this._methods.isOwnerInitialized(owner).call();
   }
 
-  async getCryptomonById(id: number): Promise<Cryptomon> {
-    const [cryptomonResult, offer] = await Promise.all([
-      this._methods.cryptomons(id).call(),
-      this.getOffer(id),
-    ]);
+  async getCryptomonById(id: string): Promise<Cryptomon> {
+    const cryptomonResult = await this._methods.cryptomons(id).call();
     const cryptomon = Cryptomon.fromResult({ ...cryptomonResult, id });
-    cryptomon.offer = offer;
+    if (cryptomon.isInAChallenge) {
+      cryptomon.challenge = await this.getChallenge(id.toString());
+    } else if (cryptomon.isOnSale) {
+      cryptomon.offer = await this.getOffer(id);
+    }
     return cryptomon;
   }
 
-  async getCryptomonsByIds(ids: number[]): Promise<Cryptomon[]> {
+  async getCryptomonsByIds(ids: string[]): Promise<Cryptomon[]> {
     const promises = ids.map(this.getCryptomonById.bind(this));
     return Promise.all(promises);
   }
 
-  async getOffer(id: number): Promise<Offer | null> {
+  async getOffer(id: string): Promise<Offer | null> {
     const offer = await this._methods.offers(id).call();
-    if (this._isEmptyAddress(offer.buyer)) return null;
+    if (this._isZero(offer.buyer)) return null;
     const count = await this._methods.getOfferedCryptomonsCount(id).call();
     const promises = Array(this._toNumber(count))
       .map((v, i) => this._methods.getOfferedCryptomonByIndex(id, i).call());
@@ -102,22 +103,23 @@ export default class CryptomonGame {
     return Offer.fromResult({ id, offeredCryptomons, ...offer });
   }
 
+  async getChallenge(id: string): Promise<Challenge | null> {
+    const challenge = await this._methods.challenges(id).call();
+    return this._isZero(challenge.stake)
+      ? null
+      : Challenge.fromResult({ ...challenge, opponentId: id });
+  }
+
   async getMarketplaceCryptomons(max: number): Promise<Cryptomon[]> {
     const events = await this._contract.getPastEvents('CryptomonPutOnSale', { fromBlock: 0 });
-    const ids = events
-      .map(event => event.returnValues.id)
-      .map(this._web3.utils.toBN)
-      .map(id => id.toNumber());
+    const ids = events.map(event => event.returnValues.id);
     const cryptomons = await this.getCryptomonsByIds(ids);
     return cryptomons.filter(c => c.isOnSale); // check if they're still on sale
   }
 
   async getBattlegroundCryptomons() {
     const events = await this._contract.getPastEvents('CryptomonReadyToFight', { fromBlock: 0 });
-    const ids = events
-      .map(event => event.returnValues.id)
-      .map(this._web3.utils.toBN)
-      .map(id => id.toNumber());
+    const ids = events.map(event => event.returnValues.id);
     const cryptomons = await this.getCryptomonsByIds(ids);
     return cryptomons.filter(c => c.isReadyToFight || c.isInAChallenge);
   }
@@ -135,7 +137,7 @@ export default class CryptomonGame {
   // Trading
   // ///////////////////////////
 
-  async sellCryptomon(id: number): Promise<void> {
+  async sellCryptomon(id: string): Promise<void> {
     await this._methods.sell(id).send();
   }
 
@@ -144,15 +146,15 @@ export default class CryptomonGame {
     await this._methods.makeOffer(cryptomonId, offeredCryptomons).send({ from, value });
   }
 
-  async acceptOffer(id: number): Promise<void> {
+  async acceptOffer(id: string): Promise<void> {
     await this._methods.acceptOffer(id).send();
   }
 
-  async rejectOffer(id: number): Promise<void> {
+  async rejectOffer(id: string): Promise<void> {
     await this._methods.rejectOffer(id).send();
   }
 
-  async withdrawOffer(id: number): Promise<void> {
+  async withdrawOffer(id: string): Promise<void> {
     await this._methods.withdrawOffer(id).send();
   }
 
@@ -160,7 +162,7 @@ export default class CryptomonGame {
   // Breeding
   // ///////////////////////////
 
-  async breed(parent1: number, parent2: number, name: string) {
+  async breed(parent1: string, parent2: string, name: string) {
     await this._methods.breed(parent1, parent2, name).send();
   }
 
@@ -168,11 +170,11 @@ export default class CryptomonGame {
   // Sharing
   // ///////////////////////////
 
-  async share(id: number, coOwner: string) {
+  async share(id: string, coOwner: string) {
     await this._methods.share(id, coOwner).send();
   }
 
-  async endSharing(id: number) {
+  async endSharing(id: string) {
     await this._methods.endSharing(id).send();
   }
 
@@ -180,16 +182,63 @@ export default class CryptomonGame {
   // Fighting
   // ///////////////////////////
 
-  async readyToFight(id: number) {
+  async readyToFight(id: string) {
     await this._methods.readyToFight(id).send();
   }
 
-  async leaveFight(id: number) {
+  async leaveFight(id: string) {
     await this._methods.leaveFight(id).send();
   }
 
-  async challenge(opponentId: number, challengerId: number, stake: number) {
+  async challenge(opponentId: string, challengerId: string, stake: number) {
     await this._methods.challenge(opponentId, challengerId).send({ value: stake });
+  }
+
+  async acceptChallenge(id: string, stake: string) {
+    await this._methods.acceptChallenge(id).send({ value: stake });
+  }
+
+  async rejectChallenge(id: string) {
+    await this._methods.rejectChallenge(id).send();
+  }
+
+  async withdrawChallenge(id: string) {
+    await this._methods.withdrawChallenge(id).send();
+  }
+
+  async waitForFightResult(cryptomonId: string): Promise<any> {
+    const options = {
+      fromBlock: 'latest',
+      filter: {
+        opponentId: cryptomonId,
+      },
+    };
+    return new Promise(((resolve, reject) => {
+      this._contract.once('Fight', options, ((error, event) => {
+        if (error) reject(error);
+        resolve(event);
+      }));
+    }));
+  }
+
+  async onFightResult(cryptomonId: string, callback: (result: FightResult) => any) {
+    const event = await this.waitForFightResult(cryptomonId);
+    callback(FightResult.fromEvent(event));
+  }
+
+  async findChallengeByChallengerId(id: string): Promise<Challenge | null> {
+    const opponentId = await this.findOpponentIdByChallengerId(id);
+    return this.getChallenge(opponentId);
+  }
+
+  async findOpponentIdByChallengerId(id: string): Promise<string> {
+    const options = {
+      fromBlock: 0,
+      filter: { challengerId: id },
+    };
+    const events = await this._contract.getPastEvents('ChallengeCreated', options);
+    const event = events[events.length - 1];
+    return event.returnValues.opponentId;
   }
 
   // UTILITY METHODS
@@ -198,7 +247,7 @@ export default class CryptomonGame {
     return this._web3.utils.toBN(bnString).toNumber();
   }
 
-  private _isEmptyAddress(address: string) {
-    return this._web3.utils.toBN(address).eq(this._web3.utils.toBN(0));
+  private _isZero(value: string) {
+    return this._web3.utils.toBN(value).isZero();
   }
 }

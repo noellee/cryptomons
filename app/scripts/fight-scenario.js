@@ -1,3 +1,4 @@
+const { CryptomonState } = require('../../test/utils.js');
 const init = require('./init-scenario');
 
 module.exports = async (web3, contract) => {
@@ -6,8 +7,19 @@ module.exports = async (web3, contract) => {
   await init(web3, contract);
 
   console.log('Getting ready to fight');
-  await contract.methods.readyToFight(0).send({ from: accounts[0] });
-  await contract.methods.readyToFight(1).send({ from: accounts[2] });
+  const getReadyToFight = async (id, owner) => {
+    const cryptomon = await contract.methods.cryptomons(id).call();
+    if (cryptomon.state === CryptomonState.ReadyToFight.toString()) {
+      console.log('Already ready to fight');
+      return;
+    }
+    await contract.methods.readyToFight(id).send({ from: owner });
+  };
+  await getReadyToFight(0, accounts[0]);
+  await getReadyToFight(1, accounts[2]);
 
-  // console.log('Challenging');
+  const stake = 1e18;
+
+  console.log('Challenging');
+  await contract.methods.challenge(1, 0).send({ from: accounts[0], value: stake });
 };

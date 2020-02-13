@@ -58,7 +58,7 @@ export default class ChallengeDialog extends Vue {
   public async challenge() {
     const opponentId = this.cryptomon.id;
     const challengerId = this.selectedCryptomon;
-    const { stake } = this;
+    const stake = this.$store.state.web3.utils.toWei(this.stake.toString(), 'ether');
     if (challengerId === null) return;
     await this.$store.dispatch(Actions.Challenge, { opponentId, challengerId, stake });
     this.$emit('challenge');

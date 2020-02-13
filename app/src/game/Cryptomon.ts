@@ -1,9 +1,10 @@
 import CryptomonElement from './CryptomonElement';
 import CryptomonState from './CryptomonState';
 import Offer from './Offer';
+import Challenge from './Challenge';
 
 export default class Cryptomon {
-  public readonly id: number;
+  public readonly id: string;
 
   public readonly name: string;
 
@@ -21,9 +22,11 @@ export default class Cryptomon {
 
   public offer: Offer | null = null;
 
+  public challenge: Challenge | null = null;
+
   private _state: CryptomonState;
 
-  constructor(id: number, name: string, primaryElement: CryptomonElement,
+  constructor(id: string, name: string, primaryElement: CryptomonElement,
     secondaryElement: CryptomonElement, state: CryptomonState, health: number, strength: number,
     owner: string, coOwner: string) {
     this.id = id;
@@ -70,7 +73,7 @@ export default class Cryptomon {
   }
 
   public set isInAChallenge(value) {
-    this._state = value ? CryptomonState.InAChallenge : CryptomonState.Idle;
+    this._state = value ? CryptomonState.InAChallenge : CryptomonState.ReadyToFight;
   }
 
   public set isOnSale(value) {
@@ -85,7 +88,7 @@ export default class Cryptomon {
     return this.isIdle || this.isShared;
   }
 
-  static fromResult(result: {id: number, name: string, primaryElement: CryptomonElement,
+  static fromResult(result: {id: string, name: string, primaryElement: CryptomonElement,
     secondaryElement: CryptomonElement, state: CryptomonState, health: number, strength: number,
     owner: string, coOwner: string }) {
     return new Cryptomon(

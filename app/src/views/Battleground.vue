@@ -47,7 +47,7 @@ export default class Battleground extends Vue {
 
   get battlegroundCryptomons() {
     const readyCryptomons: Cryptomon[] = this.$store.getters[Getters.BattlegroundCryptomons];
-    return readyCryptomons.filter(c => c.owner !== this.account);
+    return readyCryptomons; // .filter(c => c.owner !== this.account);
   }
 }
 </script>

@@ -4,7 +4,7 @@ enum Actions {
 
   // Make fetch happen
   FetchOwnerStatus = 'fetchOwnerStatus',
-  FetchCryptomonsById = 'fetchCryptomonsById',
+  FetchCryptomonsByIds = 'fetchCryptomonsByIds',
   FetchCryptomonsByOwner = 'fetchCryptomonsByOwner',
   FetchCryptomonsByCoOwner = 'fetchCryptomonsByCoOwner',
   FetchMarketplaceCryptomons = 'fetchMarketplaceCryptomons',
@@ -28,6 +28,9 @@ enum Actions {
   ReadyToFight = 'readyToFight',
   LeaveFight = 'leaveFight',
   Challenge = 'challenge',
+  AcceptChallenge = 'acceptChallenge',
+  RejectChallenge = 'rejectChallenge',
+  WithdrawChallenge = 'withdrawChallenge',
 }
 
 export default Actions;
