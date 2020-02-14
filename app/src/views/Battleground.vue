@@ -1,7 +1,6 @@
 <template>
   <div>
     <div v-if="isReady">
-      <h2>Cryptomons ready to fight</h2>
       <CryptomonList v-if="battlegroundCryptomons.length" :cryptomons="battlegroundCryptomons" />
       <p v-else><i>Nothing to see right now :(</i></p>
     </div>
@@ -45,9 +44,8 @@ export default class Battleground extends Vue {
     return this.$store.getters[Getters.DefaultAccount];
   }
 
-  get battlegroundCryptomons() {
-    const readyCryptomons: Cryptomon[] = this.$store.getters[Getters.BattlegroundCryptomons];
-    return readyCryptomons; // .filter(c => c.owner !== this.account);
+  get battlegroundCryptomons(): Cryptomon[] {
+    return this.$store.getters[Getters.BattlegroundCryptomons];
   }
 }
 </script>

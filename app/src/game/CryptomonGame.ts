@@ -1,6 +1,7 @@
 import Web3 from 'web3';
 // @ts-ignore
 import { Contract } from 'web3-eth-contract'; // eslint-disable-line import/no-extraneous-dependencies
+import { TransactionReceipt } from 'web3-core';
 import getContract from '@/contracts/CryptomonsGameContract';
 import Cryptomon from './Cryptomon';
 import CryptomonElement from './CryptomonElement';
@@ -32,7 +33,13 @@ export default class CryptomonGame {
           const from = self.defaultAccount;
           return {
             call: async (options: any) => method.call({ from, ...options }),
-            send: async (options: any) => method.send({ from, ...options }),
+            send: async (options: any) => new Promise((resolve, reject) => {
+              method.send({ from, ...options })
+                .once('confirmation', (confirmation: any, receipt: TransactionReceipt) => {
+                  resolve(receipt);
+                })
+                .on('error', reject);
+            }),
           };
         };
       },
@@ -119,6 +126,18 @@ export default class CryptomonGame {
     const ids = events.map(event => event.returnValues.id);
     const cryptomons = await this.getCryptomonsByIds(ids);
     return cryptomons.filter(c => c.isReadyToFight || c.isInAChallenge);
+  }
+
+  // ///////////////////////////
+  // Game balance
+  // ///////////////////////////
+
+  async getBalance(): Promise<string> {
+    return this._methods.getBalance().call();
+  }
+
+  async withdrawFunds(amount: string) {
+    await this._methods.withdrawFunds(amount).send();
   }
 
   // ///////////////////////////

@@ -6,11 +6,12 @@ export function getWeb3(): Promise<Web3> {
   // Check for injected web3 (mist/metamask)
     const { ethereum } = window;
     if (typeof ethereum !== 'undefined') {
+      // @ts-ignore
       const web3 = new Web3(ethereum);
+      web3.eth.transactionConfirmationBlocks = 1;
       // @ts-ignore
       ethereum.enable().then(() => resolve(web3));
     } else {
-      // web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:7545')) GANACHE FALLBACK
       reject(new Error('Unable to connect to Metamask'));
     }
   }));

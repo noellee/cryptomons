@@ -1,7 +1,6 @@
 <template>
   <div>
     <div v-if="isReady">
-      <h2>Browse Marketplace</h2>
       <CryptomonList v-if="marketplaceCryptomons.length" :cryptomons="marketplaceCryptomons" />
       <p v-else><i>Nothing to see right now :(</i></p>
     </div>
@@ -45,10 +44,8 @@ export default class Marketplace extends Vue {
     return this.$store.getters[Getters.DefaultAccount];
   }
 
-  get marketplaceCryptomons() {
-    const onSaleCryptomons: Cryptomon[] = this.$store.getters[Getters.MarketplaceCryptomons];
-    const owner = this.$store.state.game.defaultAccount;
-    return onSaleCryptomons.filter(c => c.owner !== owner);
+  get marketplaceCryptomons(): Cryptomon[] {
+    return this.$store.getters[Getters.MarketplaceCryptomons];
   }
 }
 </script>

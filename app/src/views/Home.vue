@@ -3,7 +3,6 @@
     <div v-if="isReady">
       <StarterCryptomonForm v-if="isNewUser" />
       <div v-else>
-        <h2>My Cryptomons</h2>
         <CryptomonList v-if="ownedCryptomons.length" :cryptomons="ownedCryptomons" />
         <p v-else><i>You own nothing.</i></p>
         <h2>My co-owned Cryptomons</h2>
