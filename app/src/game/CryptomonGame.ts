@@ -86,9 +86,9 @@ export default class CryptomonGame {
 
   async getCryptomonById(id: string): Promise<Cryptomon> {
     const cryptomonResult = await this._methods.cryptomons(id).call();
-    const cryptomon = Cryptomon.fromResult({ ...cryptomonResult, id });
+    const cryptomon = Cryptomon.fromResult({ ...cryptomonResult });
     if (cryptomon.isInAChallenge) {
-      cryptomon.challenge = await this.getChallenge(id.toString());
+      cryptomon.challenge = await this.getChallenge(id);
     } else if (cryptomon.isOnSale) {
       cryptomon.offer = await this.getOffer(id);
     }

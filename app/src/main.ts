@@ -3,7 +3,7 @@ import { library } from '@fortawesome/fontawesome-svg-core';
 import {
   faAngleDown,
   faAngleUp,
-  faBaby,
+  faBaby, faCircleNotch,
   faCommentsDollar,
   faDoorOpen,
   faEye,
@@ -32,6 +32,7 @@ library.add(
   faDoorOpen,
   faHome,
   faStore,
+  faCircleNotch,
 );
 Vue.component('fa-icon', FontAwesomeIcon);
 

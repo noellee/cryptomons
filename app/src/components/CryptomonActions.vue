@@ -106,7 +106,7 @@ import ChallengeDialog from '@/components/dialogs/ChallengeDialog.vue';
     ViewChallengeDialog: () => import('@/components/dialogs/ViewChallengeDialog.vue'),
   },
 })
-export default class CryptomonCard extends Vue {
+export default class CryptomonActions extends Vue {
   @Prop(Cryptomon) cryptomon!: Cryptomon;
 
   isMakeOfferDialogOpened: boolean = false;

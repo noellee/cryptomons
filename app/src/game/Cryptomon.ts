@@ -52,6 +52,10 @@ export default class Cryptomon {
     return this._state === CryptomonState.InAnOffer;
   }
 
+  public set isInAnOffer(value) {
+    this._state = value ? CryptomonState.InAnOffer : CryptomonState.Idle;
+  }
+
   public get isIdle(): boolean {
     return this._state === CryptomonState.Idle;
   }

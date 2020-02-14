@@ -1,21 +1,21 @@
 export default class Offer {
-  public cryptomonId: number;
+  public cryptomonId: string;
 
   public price: string;
 
   public buyer: string;
 
-  public offeredCryptomons: number[];
+  public offeredCryptomons: string[];
 
-  constructor(cryptomonId: number, buyer: string, price: string, offeredCryptomons: number[]) {
+  constructor(cryptomonId: string, buyer: string, price: string, offeredCryptomons: string[]) {
     this.cryptomonId = cryptomonId;
     this.buyer = buyer;
     this.price = price;
     this.offeredCryptomons = offeredCryptomons;
   }
 
-  static fromResult(result: { id: number, buyer: string, price: string,
-    offeredCryptomons: number[] }) {
+  static fromResult(result: { id: string, buyer: string, price: string,
+    offeredCryptomons: string[] }) {
     return new Offer(result.id, result.buyer, result.price, result.offeredCryptomons);
   }
 }

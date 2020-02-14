@@ -38,11 +38,11 @@ import Getters from '@/store/getters';
   components: { Dialog },
 })
 export default class MakeOfferDialog extends Vue {
-  @Prop(Number) cryptomonId!: number;
+  @Prop(String) cryptomonId!: string;
 
-  price: number = 1.00000;
+  price: number = 1;
 
-  selectedCryptomons: number[] = [];
+  selectedCryptomons: string[] = [];
 
   public async makeOffer() {
     const defaultAccount = this.$store.getters[Getters.DefaultAccount];
