@@ -9,11 +9,11 @@ module.exports = async (web3, contract) => {
   await contract.methods.sell(0).send({ from: accounts[0] });
 
   console.log('Making offer');
-  await contract.methods.makeOffer(0, []).send({ from: accounts[2], value: web3.utils.toWei('3', 'ether'), gasLimit: 6721975 });
+  await contract.methods.makeOffer(0, []).send({ from: accounts[1], value: web3.utils.toWei('3', 'ether'), gasLimit: 6721975 });
 
   console.log('Accepting offer');
   await contract.methods.acceptOffer(0).send({ from: accounts[0], gasLimit: 6721975 });
 
   console.log('Breeding');
-  await contract.methods.breed(0, 1, 'charkira').send({ from: accounts[2], gasLimit: 6721975 });
+  await contract.methods.breed(0, 1, 'charkira').send({ from: accounts[1], gasLimit: 6721975 });
 };

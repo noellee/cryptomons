@@ -11,7 +11,8 @@
     "scenario:breeding": "node scripts/runner.js ./breed-scenario.js",
     "scenario:fighting": "node scripts/runner.js ./fight-scenario.js",
     "scenario:trading": "node scripts/runner.js ./marketplace-scenario.js",
-    "scenario:sharing": "node scripts/runner.js ./sharing-scenario.js"
+    "scenario:sharing": "node scripts/runner.js ./sharing-scenario.js",
+    "scenario:all": "node scripts/runner.js ./all-scenario.js"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.27",

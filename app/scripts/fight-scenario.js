@@ -16,7 +16,7 @@ module.exports = async (web3, contract) => {
     await contract.methods.readyToFight(id).send({ from: owner });
   };
   await getReadyToFight(0, accounts[0]);
-  await getReadyToFight(1, accounts[2]);
+  await getReadyToFight(1, accounts[1]);
 
   const stake = 1e18;
 

@@ -28,4 +28,4 @@ script(web3, getContract(web3))
 setTimeout(() => {
   console.error('Timeout');
   process.exit(1);
-}, 30000);
+}, 10 * 60 * 60 * 1000);
