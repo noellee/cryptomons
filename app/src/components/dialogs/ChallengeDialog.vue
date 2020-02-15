@@ -43,7 +43,7 @@ import Actions from '@/store/actions';
 export default class ChallengeDialog extends Vue {
   @Prop(Cryptomon) cryptomon!: Cryptomon;
 
-  selectedCryptomon: number | null = null;
+  selectedCryptomon: string | null = null;
 
   name: string = '';
 

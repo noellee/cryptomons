@@ -6,11 +6,11 @@
     <form v-on:submit="breed()" v-on:submit.prevent>
       <p>Select one of your Cryptomons to breed with <b>{{cryptomon.name}}</b></p>
       <label>
-        <span>Name the baby Cryptomon</span>
+        <span>Name the newborn Cryptomon: </span>
         <input type="text" v-model="name" placeholder="Name">
       </label>
-      <label class="radio-label" v-for="cryptomon in breedableCryptomons" v-bind:key="cryptomon.id">
-        <input type="radio" v-model="selectedCryptomon" v-bind:value="cryptomon.id" />
+      <label class="radio-label" v-for="cryptomon in breedableCryptomons" :key="cryptomon.id">
+        <input type="radio" v-model="selectedCryptomon" :value="cryptomon.id" />
         <span>
             <b>{{ cryptomon.name }}</b>
             [{{ cryptomon.primaryElementAsString }}]
@@ -41,11 +41,11 @@ import Actions from '@/store/actions';
 export default class BreedDialog extends Vue {
   @Prop(Cryptomon) cryptomon!: Cryptomon;
 
-  selectedCryptomon: number | null = null;
+  selectedCryptomon: string | null = null;
 
   name: string = '';
 
-  public get breedableCryptomons() {
+  public get breedableCryptomons(): Cryptomon[] {
     const defaultAccount = this.$store.getters[Getters.DefaultAccount];
     const getCryptomonsByOwner = this.$store.getters[Getters.GetCryptomonsByOwner];
     const getCryptomonsByCoOwner = this.$store.getters[Getters.GetCryptomonsByCoOwner];
@@ -54,10 +54,11 @@ export default class BreedDialog extends Vue {
     return _(ownedCryptomons)
       .concat(coOwnedCryptomons)
       .filter(c => c.canBreed)
-      .filter(c => c.id !== this.cryptomon.id);
+      .filter(c => c.id !== this.cryptomon.id)
+      .value();
   }
 
-  public async breed() {
+  public async breed(): Promise<void> {
     const parent1 = this.cryptomon.id;
     const parent2 = this.selectedCryptomon;
     const { name } = this;

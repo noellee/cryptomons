@@ -122,12 +122,13 @@ export default new Vuex.Store<RootState>({
         commit('loadWeb3', web3);
       }
     },
-    [Actions.InitStarterCryptomon]: async ({ state, commit },
+    [Actions.InitStarterCryptomon]: useLoader(async ({ state, commit, dispatch },
       payload: { name: string, element: CryptomonElement }) => {
       if (!state.game) throw new TypeError();
       await state.game.initStarterCryptomon(payload.name, payload.element);
       commit('updateOwnerStatus', true);
-    },
+      dispatch(Actions.FetchCryptomonsByOwner);
+    }),
 
     // ///////////////////////////
     // Fetching stuff
