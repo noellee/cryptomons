@@ -54,7 +54,7 @@
       <IconButton @click="endSharing" icon="heart-broken" v-if="isOwner">Un-share</IconButton>
     </template>
 
-    <!--Ready to fight and owned-->
+    <!--Ready to fight-->
     <template v-else-if="cryptomon.isReadyToFight">
       <IconButton v-if="isOwner" @click="leaveFight" icon="door-open" class="bg-red">
         Leave fight
@@ -62,22 +62,29 @@
       <IconButton v-else @click="openChallengeDialog" icon="fist-raised">Challenge</IconButton>
     </template>
 
-    <!--Challenged-->
+    <!--In a challenge-->
     <template v-else-if="cryptomon.isInAChallenge">
       <IconButton @click="openViewChallengeDialog" icon="eye">View challenge</IconButton>
     </template>
 
-    <!--Otherwise-->
-    <template v-else>
-      <IconButton v-if="canBuy" icon="comments-dollar" @click="openMakeOfferDialog">
-        Make offer
-      </IconButton>
-      <IconButton v-else-if="cryptomon.isOnSale" icon="eye" @click="openViewOfferDialog">
+    <!--On sale-->
+    <template v-else-if="cryptomon.isOnSale">
+      <IconButton v-if="cryptomon.offer" icon="eye" @click="openViewOfferDialog">
         View offer
       </IconButton>
-      <button v-else-if="cryptomon.isInAnOffer" disabled class="secondary">Pending offer</button>
-      <button v-else disabled class="secondary">Unavailable</button>
+      <IconButton v-else-if="isOwner" icon="door-open" @click="takeOffMarket" class="bg-red">
+        Take off market
+      </IconButton>
+      <IconButton v-else icon="comments-dollar" @click="openMakeOfferDialog">
+        Make offer
+      </IconButton>
     </template>
+
+    <!--Involved in an offer-->
+    <button v-else-if="cryptomon.isInAnOffer" disabled class="secondary">Pending offer</button>
+
+    <!--Otherwise-->
+    <button v-else disabled class="secondary">Unavailable</button>
     </DropdownButtonGroup>
   </div>
 </template>
@@ -133,16 +140,23 @@ export default class CryptomonActions extends Vue {
     return this.isOwner || this.cryptomon.coOwner === this.defaultAccount;
   }
 
-  public get canBuy() {
-    return !this.isOwner
-      && this.cryptomon.isOnSale
-      && !this.cryptomon.offer;
-  }
+  // ///////////////////////////
+  // Trading
+  // ///////////////////////////
 
   public async sell() {
     const { id } = this.cryptomon;
     await this.$store.dispatch(Actions.SellCryptomon, { id });
   }
+
+  public async takeOffMarket() {
+    const { id } = this.cryptomon;
+    await this.$store.dispatch(Actions.TakeOffMarket, id);
+  }
+
+  // ///////////////////////////
+  // Sharing
+  // ///////////////////////////
 
   public async endSharing() {
     await this.$store.dispatch(Actions.EndSharing, this.cryptomon.id);

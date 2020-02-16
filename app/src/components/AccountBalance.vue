@@ -90,7 +90,7 @@ export default class AccountBalance extends Vue {
 
 .account-balance > span {
   display: block;
-  width: 160px;
+  width: 240px;
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;

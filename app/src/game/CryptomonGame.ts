@@ -157,6 +157,10 @@ export default class CryptomonGame {
     await this._methods.sell(id).send();
   }
 
+  async takeOffMarket(id: string): Promise<void> {
+    await this._methods.takeOffMarket(id).send();
+  }
+
   async makeOffer(offer: Offer): Promise<void> {
     const { cryptomonId, price: value, offeredCryptomons, buyer: from } = offer;
     await this._methods.makeOffer(cryptomonId, offeredCryptomons).send({ from, value });

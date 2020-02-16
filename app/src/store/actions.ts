@@ -12,6 +12,7 @@ enum Actions {
 
   // Trading
   SellCryptomon = 'sellCryptomon',
+  TakeOffMarket = 'takeOffMarket',
   MakeOffer = 'makeOffer',
   AcceptOffer = 'acceptOffer',
   RejectOffer = 'rejectOffer',

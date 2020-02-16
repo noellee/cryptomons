@@ -1,4 +1,6 @@
-const { CryptomonElement, CryptomonState, assertBalanceIncrease } = require('./utils.js');
+const {
+  CryptomonElement, CryptomonState, assertThrowsAsync, assertBalanceIncrease,
+} = require('./utils.js');
 
 const CryptomonsGame = artifacts.require('CryptomonsGame');
 
@@ -27,7 +29,16 @@ contract('CryptomonsGame trade', accounts => {
     assert.equal(pika.state, CryptomonState.OnSale);
   });
 
+  it('seller should be able to take cryptomon off the market', async () => {
+    await contract.takeOffMarket(pikaId, { from: seller });
+    const pika = await contract.cryptomons(pikaId);
+    assert.equal(pika.state, CryptomonState.Idle);
+  });
+
   describe('offer interaction', async () => {
+    before(async() => {
+      await contract.sell(pikaId, { from: seller });
+    });
 
     beforeEach('make offer', async () => {
       await contract.makeOffer(pikaId, [charId], { from: buyer, value: offerPrice });

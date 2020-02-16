@@ -100,9 +100,18 @@ contract CryptomonsGame {
         _;
     }
 
+    modifier isOnSale(uint cryptomonId) {
+        require(cryptomons[cryptomonId].state == State.OnSale, "Cryptomon must be on sale.");
+        _;
+    }
+
     modifier isUnderOffer(uint cryptomonId) {
-        require(cryptomons[cryptomonId].state == State.OnSale, "Cryptomon is not on sale");
-        require(offers[cryptomonId].buyer != address(0x0), "There is no offer for this Cryptomon.");
+        require(offers[cryptomonId].buyer != address(0x0), "There must be an offer for this Cryptomon.");
+        _;
+    }
+
+    modifier isNotUnderOffer(uint cryptomonId) {
+        require(offers[cryptomonId].buyer == address(0x0), "There must not be an offer for this Cryptomon.");
         _;
     }
 
@@ -252,16 +261,21 @@ contract CryptomonsGame {
         emit CryptomonPutOnSale(id);
     }
 
+    /// @notice Take a currently on sale Cryptomon off the market.
+    /// @param id The id of the Cryptomon to take off the market
+    function takeOffMarket(uint id)
+    external cryptomonExists(id) onlyOwner(id) isOnSale(id) isNotUnderOffer(id) {
+        cryptomons[id].state = State.Idle;
+    }
+
     /// @notice Make an offer to buy a Cryptomon. The value sent is the offered price.
     /// @param cryptomonId The id of the Cryptomon to buy
     /// @param cryptomonIds The ids of the buyer's Cryptomons to be offered to exchange for the
     /// seller's Cryptomon
     function makeOffer(uint cryptomonId, uint[] calldata cryptomonIds)
-    external cryptomonExists(cryptomonId) payable {
-
-        require(cryptomons[cryptomonId].state == State.OnSale, "Cryptomon is not on sale.");
+    external
+    cryptomonExists(cryptomonId) isOnSale(cryptomonId) isNotUnderOffer(cryptomonId) payable {
         require(cryptomons[cryptomonId].owner != msg.sender, "Cannot make an offer for your own Cryptomon.");
-        require(offers[cryptomonId].buyer == address(0x0), "An offer has already been made for this Cryptomon");
 
         for (uint i = 0; i < cryptomonIds.length; i++) {
             require(
@@ -287,7 +301,8 @@ contract CryptomonsGame {
     /// can call this.
     /// @param cryptomonId The id of the Cryptomon to accept the offer for
     function acceptOffer(uint cryptomonId)
-    external cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isUnderOffer(cryptomonId) {
+    external
+    cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isOnSale(cryptomonId) isUnderOffer(cryptomonId) {
 
         address seller = msg.sender;
 
@@ -316,7 +331,8 @@ contract CryptomonsGame {
     /// can call this.
     /// @param cryptomonId The id of the Cryptomon to reject the offer for
     function rejectOffer(uint cryptomonId)
-    external cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isUnderOffer(cryptomonId) {
+    external
+    cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isOnSale(cryptomonId) isUnderOffer(cryptomonId) {
         cancelOffer(cryptomonId);
         emit OfferRejected(cryptomonId);
     }
@@ -324,7 +340,7 @@ contract CryptomonsGame {
     /// @notice Withdraw an offer that has been made to a Cryptomon. Only the buyer can call this.
     /// @param cryptomonId The id of the Cryptomon to withdraw the offer for
     function withdrawOffer(uint cryptomonId)
-    external cryptomonExists(cryptomonId) isUnderOffer(cryptomonId) {
+    external cryptomonExists(cryptomonId) isOnSale(cryptomonId) isUnderOffer(cryptomonId) {
         require(offers[cryptomonId].buyer == msg.sender, "Only the buyer can withdraw an offer.");
         cancelOffer(cryptomonId);
         emit OfferWithdrawn(cryptomonId);

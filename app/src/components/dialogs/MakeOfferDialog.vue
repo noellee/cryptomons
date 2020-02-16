@@ -84,12 +84,16 @@ export default class MakeOfferDialog extends Vue {
     cursor: pointer;
   }
 
+  .checkbox-label:not(:first-child):not(:last-child) {
+    margin-top: 8px;
+    margin-bottom: 8px;
+  }
+
   .checkbox-label input[type=checkbox] {
     margin: 12px;
   }
 
   .checkbox-label:hover {
     background: #d3d3d3;
-    /*color: #f2f2f2;*/
   }
 </style>

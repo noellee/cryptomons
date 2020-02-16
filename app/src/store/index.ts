@@ -180,6 +180,12 @@ export default new Vuex.Store<RootState>({
       const updater: Updater = (cryptomon) => { cryptomon.isOnSale = true; };
       commit('updateCryptomon', { id: payload.id, updater });
     }),
+    [Actions.TakeOffMarket]: useLoader(async ({ state, commit }, id: string) => {
+      if (!state.game) throw new TypeError();
+      await state.game.takeOffMarket(id);
+      const updater: Updater = (cryptomon) => { cryptomon.isOnSale = false; };
+      commit('updateCryptomon', { id, updater });
+    }),
     [Actions.MakeOffer]: useLoader(async ({ state, commit }, offer: Offer) => {
       if (!state.game) throw new TypeError();
       await state.game.makeOffer(offer);
