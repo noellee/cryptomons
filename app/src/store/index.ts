@@ -159,7 +159,7 @@ export default new Vuex.Store<RootState>({
     },
     [Actions.FetchMarketplaceCryptomons]: async ({ state, commit }) => {
       if (!state.game) throw new TypeError();
-      const cryptomons = await state.game.getMarketplaceCryptomons(20);
+      const cryptomons = await state.game.getMarketplaceCryptomons();
       commit('updateCryptomons', { cryptomons });
       commit('updateHasFetchedMarketplace', true);
     },

@@ -114,18 +114,14 @@ export default class CryptomonGame {
       : Challenge.fromResult({ ...challenge, opponentId: id });
   }
 
-  async getMarketplaceCryptomons(max: number): Promise<Cryptomon[]> {
-    const events = await this._contract.getPastEvents('CryptomonPutOnSale', { fromBlock: 0 });
-    const ids = events.map(event => event.returnValues.id);
-    const cryptomons = await this.getCryptomonsByIds(ids);
-    return cryptomons.filter(c => c.isOnSale); // check if they're still on sale
+  async getMarketplaceCryptomons(): Promise<Cryptomon[]> {
+    const marketplace = await this._methods.getMarketplace().call();
+    return this.getCryptomonsByIds(marketplace);
   }
 
-  async getBattlegroundCryptomons() {
-    const events = await this._contract.getPastEvents('CryptomonReadyToFight', { fromBlock: 0 });
-    const ids = events.map(event => event.returnValues.id);
-    const cryptomons = await this.getCryptomonsByIds(ids);
-    return cryptomons.filter(c => c.isReadyToFight || c.isInAChallenge);
+  async getBattlegroundCryptomons(): Promise<Cryptomon[]> {
+    const battleground = await this._methods.getBattleground().call();
+    return this.getCryptomonsByIds(battleground);
   }
 
   // ///////////////////////////

@@ -63,8 +63,14 @@ contract CryptomonsGame {
     // maps cryptomonId => offers
     mapping(uint => Offer) public offers;
 
+    // ids of cryptomons in the marketplace
+    uint[] private marketplace;
+
     // maps cryptomonId => challenges
     mapping(uint => Challenge) public challenges;
+
+    // ids of cryptomons in the battleground
+    uint[] private battleground;
 
     // maps account address => amount of wei owed to them
     mapping(address => uint) private balances;
@@ -187,6 +193,18 @@ contract CryptomonsGame {
         ids = offers[id].cryptomonIds;
     }
 
+    /// @notice Get Cryptomons in the marketplace
+    /// @return ids The ids of the Cryptomons
+    function getMarketplace() public view returns (uint[] memory ids) {
+        ids = marketplace;
+    }
+
+    /// @notice Get Cryptomons in the battleground
+    /// @return ids The ids of the Cryptomons
+    function getBattleground() public view returns (uint[] memory ids) {
+        ids = battleground;
+    }
+
     // ////////////////////////////////////
     // FEATURE: ACCOUNT BALANCE
     // ////////////////////////////////////
@@ -258,6 +276,7 @@ contract CryptomonsGame {
     function sell(uint id)
     external cryptomonExists(id) onlyOwner(id) isIdle(id) isNotShared(id) {
         cryptomons[id].state = State.OnSale;
+        marketplace.push(id);
         emit CryptomonPutOnSale(id);
     }
 
@@ -266,6 +285,7 @@ contract CryptomonsGame {
     function takeOffMarket(uint id)
     external cryptomonExists(id) onlyOwner(id) isOnSale(id) isNotUnderOffer(id) {
         cryptomons[id].state = State.Idle;
+        deleteElementFromArray(marketplace, id);
     }
 
     /// @notice Make an offer to buy a Cryptomon. The value sent is the offered price.
@@ -311,6 +331,7 @@ contract CryptomonsGame {
 
         // not on sale any more
         cryptomons[cryptomonId].state = State.Idle;
+        deleteElementFromArray(marketplace, cryptomonId);
 
         // the cryptomon under offer is transferred to the buyer
         transferOwnership(cryptomonId, offer.buyer);
@@ -397,6 +418,7 @@ contract CryptomonsGame {
     function readyToFight(uint cryptomonId)
     external cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isIdle(cryptomonId) {
         cryptomons[cryptomonId].state = State.ReadyToFight;
+        battleground.push(cryptomonId);
         emit CryptomonReadyToFight(cryptomonId);
     }
 
@@ -405,6 +427,7 @@ contract CryptomonsGame {
     function leaveFight(uint cryptomonId)
     external cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isReadyToFight(cryptomonId) {
         cryptomons[cryptomonId].state = State.Idle;
+        deleteElementFromArray(battleground, cryptomonId);
     }
 
     /// @notice Challenge a Cryptomon to a fight. The value sent is used as the betting stake. The
@@ -467,6 +490,8 @@ contract CryptomonsGame {
         uint opponentHealth = deductHealth(opponent.health, challenger.strength);
         challenger.state = State.Idle;
         opponent.state = State.Idle;
+        deleteElementFromArray(battleground, challenger.id);
+        deleteElementFromArray(battleground, opponent.id);
 
         if (challengerHealth > opponentHealth) {
             addToBalance(challenger.owner, _challenge.stake * 2);

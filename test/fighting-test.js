@@ -24,6 +24,11 @@ contract('CryptomonsGame fighting', accounts => {
     challengerId = charTx.logs[0].args.id.toNumber();
   });
 
+  it('battleground should be empty at first', async () => {
+    const battleground = await contract.getBattleground();
+    assert.equal(battleground.length, 0);
+  });
+
   it('should be able to get ready to fight', async () => {
     await contract.readyToFight(opponentId, { from: opponentOwner });
     await contract.readyToFight(challengerId, { from: challengerOwner });
@@ -31,12 +36,19 @@ contract('CryptomonsGame fighting', accounts => {
     const challenger = await contract.cryptomons(challengerId);
     assert.equal(opponent.state, CryptomonState.ReadyToFight);
     assert.equal(challenger.state, CryptomonState.ReadyToFight);
+
+    const battleground = (await contract.getBattleground()).map(id => id.toNumber());
+    assert(battleground.includes(opponentId));
+    assert(battleground.includes(challengerId));
   });
 
   it('should be able to leave fight', async () => {
     await contract.leaveFight(challengerId, { from: challengerOwner });
     const challenger = await contract.cryptomons(challengerId);
-    assert.equal(challenger.state, CryptomonState.Idle);   
+    assert.equal(challenger.state, CryptomonState.Idle);
+
+    const battleground = (await contract.getBattleground()).map(id => id.toNumber());
+    assert(!battleground.includes(challengerId));
   });
 
   it('should not be able to challenge if challenger is not ready to fight', async () => {
@@ -74,7 +86,7 @@ contract('CryptomonsGame fighting', accounts => {
 
     it('opponent should be able to reject challenge', async () => {
       await contract.rejectChallenge(opponentId, { from: opponentOwner });
-      
+
       const opponent = await contract.cryptomons(opponentId);
       const challenger = await contract.cryptomons(challengerId);
       assert.equal(opponent.state, CryptomonState.ReadyToFight);
@@ -83,7 +95,7 @@ contract('CryptomonsGame fighting', accounts => {
 
     it('challenger should be able to withdraw challenge', async () => {
       await contract.withdrawChallenge(opponentId, { from: challengerOwner });
-      
+
       const opponent = await contract.cryptomons(opponentId);
       const challenger = await contract.cryptomons(challengerId);
       assert.equal(opponent.state, CryptomonState.ReadyToFight);
@@ -92,12 +104,15 @@ contract('CryptomonsGame fighting', accounts => {
 
     it('opponent should be able to accept challenge', async () => {
       await contract.acceptChallenge(opponentId, { from: opponentOwner, value: stake });
-      
+
       const opponent = await contract.cryptomons(opponentId);
       const challenger = await contract.cryptomons(challengerId);
       assert.equal(opponent.state, CryptomonState.Idle);
       assert.equal(challenger.state, CryptomonState.Idle);
-    });
 
+      const battleground = (await contract.getBattleground()).map(id => id.toNumber());
+      assert(!battleground.includes(opponentId));
+      assert(!battleground.includes(challengerId));
+    });
   });
 });

@@ -23,16 +23,27 @@ contract('CryptomonsGame trade', accounts => {
     charId = charTx.logs[0].args.id.toNumber();
   });
 
+  it('marketplace should be empty at first', async () => {
+    const marketplace = await contract.getMarketplace();
+    assert.equal(marketplace.length, 0);
+  });
+
   it('seller should be able to sell owned cryptomon', async () => {
     await contract.sell(pikaId, { from: seller });
     const pika = await contract.cryptomons(pikaId);
     assert.equal(pika.state, CryptomonState.OnSale);
+
+    const marketplace = (await contract.getMarketplace()).map(id => id.toNumber());
+    assert(marketplace.includes(pikaId));
   });
 
   it('seller should be able to take cryptomon off the market', async () => {
     await contract.takeOffMarket(pikaId, { from: seller });
     const pika = await contract.cryptomons(pikaId);
     assert.equal(pika.state, CryptomonState.Idle);
+
+    const marketplace = (await contract.getMarketplace()).map(id => id.toNumber());
+    assert(!marketplace.includes(pikaId));
   });
 
   describe('offer interaction', async () => {
@@ -93,6 +104,9 @@ contract('CryptomonsGame trade', accounts => {
       const buyerCryptomons = await contract.getCryptomonIdsByOwner(buyer);
       assert.deepEqual(sellerCryptomons, [char.id]);
       assert.deepEqual(buyerCryptomons, [pika.id]);
+
+      const marketplace = (await contract.getMarketplace()).map(id => id.toNumber());
+      assert(!marketplace.includes(pikaId));
 
       // fund transfer
       const sellerBalance = await contract.getBalance({ from: seller });
