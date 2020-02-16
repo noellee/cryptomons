@@ -111,7 +111,16 @@ contract('CryptomonsGame fighting', accounts => {
     });
 
     it('opponent should be able to accept challenge', async () => {
-      await contract.acceptChallenge(opponentId, { from: opponentOwner, value: stake });
+      const tx = await contract.acceptChallenge(opponentId, { from: opponentOwner, value: stake });
+      const { winnerId, winnerOwner } = tx.logs[0].args;
+
+      if (winnerId === opponentId)
+        assert.equal(winnerOwner, opponentOwner);
+      if (winnerId === challengerId)
+        assert.equal(winnerOwner, challengerOwner);
+      
+      const winnerBalance = await contract.getBalance({ from: winnerOwner });
+      assert.equal(winnerBalance.toNumber(), stake * 2);
 
       const opponent = await contract.cryptomons(opponentId);
       const challenger = await contract.cryptomons(challengerId);
