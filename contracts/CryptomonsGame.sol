@@ -354,7 +354,7 @@ contract CryptomonsGame {
     function rejectOffer(uint cryptomonId)
     external
     cryptomonExists(cryptomonId) onlyOwner(cryptomonId) isOnSale(cryptomonId) isUnderOffer(cryptomonId) {
-        cancelOffer(cryptomonId);
+        removeOffer(cryptomonId);
         emit OfferRejected(cryptomonId);
     }
 
@@ -363,11 +363,11 @@ contract CryptomonsGame {
     function withdrawOffer(uint cryptomonId)
     external cryptomonExists(cryptomonId) isOnSale(cryptomonId) isUnderOffer(cryptomonId) {
         require(offers[cryptomonId].buyer == msg.sender, "Only the buyer can withdraw an offer.");
-        cancelOffer(cryptomonId);
+        removeOffer(cryptomonId);
         emit OfferWithdrawn(cryptomonId);
     }
 
-    function cancelOffer(uint cryptomonId) private {
+    function removeOffer(uint cryptomonId) private {
         Offer memory offer = offers[cryptomonId];
         delete offers[cryptomonId];
 
