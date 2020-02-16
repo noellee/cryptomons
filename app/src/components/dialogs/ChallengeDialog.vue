@@ -11,17 +11,20 @@
         <b>ETH</b>
       </label>
       <p>Choose your fighter:</p>
-      <label class="radio-label" v-for="cryptomon in readyCryptomons" v-bind:key="cryptomon.id">
-        <input type="radio" v-model="selectedCryptomon" v-bind:value="cryptomon.id" />
-        <span>
-            <b>{{ cryptomon.name }}</b>
-            [{{ cryptomon.primaryElementAsString }}]
-            [Health: {{ cryptomon.health }}]
-            [Strength: {{ cryptomon.strength}}]
-          </span>
-      </label>
+      <template v-if="readyCryptomons.length">
+        <label class="radio-label" v-for="cryptomon in readyCryptomons" v-bind:key="cryptomon.id">
+          <input type="radio" v-model="selectedCryptomon" v-bind:value="cryptomon.id" />
+          <span>
+              <b>{{ cryptomon.name }}</b>
+              [{{ cryptomon.primaryElementAsString }}]
+              [Health: {{ cryptomon.health }}]
+              [Strength: {{ cryptomon.strength}}]
+            </span>
+        </label>
+      </template>
+      <p v-else><i>None of your Cryptomons are ready to fight :(</i></p>
       <div class="button-group">
-        <button type="submit">Challenge!</button>
+        <button type="submit" :disabled="!readyCryptomons.length">Challenge!</button>
         <button class="bg-red" v-on:click="$emit('cancel')">Cancel</button>
       </div>
     </form>
@@ -74,7 +77,7 @@ export default class ChallengeDialog extends Vue {
     background: #f2f2f2;
     border-radius: 4px;
     color: #14191f;
-    align-items: center;
+    align-items: baseline;
     cursor: pointer;
   }
 

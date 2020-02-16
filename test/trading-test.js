@@ -1,6 +1,4 @@
-const {
-  CryptomonElement, CryptomonState, assertThrowsAsync, assertBalanceIncrease,
-} = require('./utils.js');
+const { CryptomonElement, CryptomonState, clearBalance } = require('./utils.js');
 
 const CryptomonsGame = artifacts.require('CryptomonsGame');
 
@@ -119,17 +117,9 @@ contract('CryptomonsGame trade', accounts => {
     });
 
     afterEach('clear balance', async () => {
-      const withdrawPromise = async (account) => {
-        const balance = await contract.getBalance({ from: account });
-        if (!balance.toNumber()) return;
-        await assertBalanceIncrease(
-          async () => await contract.withdrawFunds(balance, { from: account }),
-          account, offerPrice,
-        );
-      };
       await Promise.all([
-        withdrawPromise(buyer),
-        withdrawPromise(seller),
+        clearBalance(contract, seller),
+        clearBalance(contract, buyer),
       ]);
     });
   });

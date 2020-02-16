@@ -472,6 +472,7 @@ contract CryptomonsGame {
         uint challengerId = challenges[cryptomonId].challengerId;
         cryptomons[cryptomonId].state = State.ReadyToFight;
         cryptomons[challengerId].state = State.ReadyToFight;
+        addToBalance(cryptomons[challengerId].owner, challenges[cryptomonId].stake);
         delete challenges[cryptomonId];
     }
 

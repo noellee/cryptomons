@@ -1,4 +1,4 @@
-const { CryptomonElement, CryptomonState, assertThrowsAsync } = require('./utils.js');
+const { CryptomonElement, CryptomonState, assertThrowsAsync, clearBalance } = require('./utils.js');
 
 const CryptomonsGame = artifacts.require('CryptomonsGame');
 
@@ -91,6 +91,10 @@ contract('CryptomonsGame fighting', accounts => {
       const challenger = await contract.cryptomons(challengerId);
       assert.equal(opponent.state, CryptomonState.ReadyToFight);
       assert.equal(challenger.state, CryptomonState.ReadyToFight);
+
+      // refund
+      const challengerBalance = await contract.getBalance({ from: challengerOwner });
+      assert.equal(challengerBalance.toNumber(), stake);
     });
 
     it('challenger should be able to withdraw challenge', async () => {
@@ -100,6 +104,10 @@ contract('CryptomonsGame fighting', accounts => {
       const challenger = await contract.cryptomons(challengerId);
       assert.equal(opponent.state, CryptomonState.ReadyToFight);
       assert.equal(challenger.state, CryptomonState.ReadyToFight);
+
+      // refund
+      const challengerBalance = await contract.getBalance({ from: challengerOwner });
+      assert.equal(challengerBalance.toNumber(), stake);
     });
 
     it('opponent should be able to accept challenge', async () => {
@@ -113,6 +121,13 @@ contract('CryptomonsGame fighting', accounts => {
       const battleground = (await contract.getBattleground()).map(id => id.toNumber());
       assert(!battleground.includes(opponentId));
       assert(!battleground.includes(challengerId));
+    });
+
+    afterEach('clear balance', async () => {
+      await Promise.all([
+        clearBalance(contract, opponentOwner),
+        clearBalance(contract, challengerOwner),
+      ]);
     });
   });
 });

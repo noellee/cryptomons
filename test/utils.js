@@ -1,4 +1,4 @@
-module.exports = {
+const self = module.exports = {
   CryptomonElement: {
     Fire: 0,
     Water: 1,
@@ -41,5 +41,13 @@ module.exports = {
       balanceAfter.toString(),
       balanceBefore.sub(gas).add(web3.utils.toBN(increase)).toString(),
     );
-  }
+  },
+  clearBalance: async (contract, account) => {
+    const balance = await contract.getBalance({ from: account });
+    if (!balance.toNumber()) return;
+    await self.assertBalanceIncrease(
+      async () => await contract.withdrawFunds(balance, { from: account }),
+      account, balance,
+    );
+  },
 };
