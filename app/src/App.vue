@@ -82,7 +82,7 @@ header {
 }
 
 #nav a.router-link-exact-active {
-  background: #d8ac29;
+  background: #e0bb4c;
   color: #f2f2f2;
 }
 

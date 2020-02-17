@@ -190,6 +190,10 @@ export default new Vuex.Store<RootState>({
       if (!state.game) throw new TypeError();
       await state.game.makeOffer(offer);
       commit('updateOffer', { id: offer.cryptomonId, offer });
+      const updater: Updater = (cryptomon) => { cryptomon.isInAnOffer = true; };
+      offer.offeredCryptomons.forEach((offered) => {
+        commit('updateCryptomon', { id: offered, updater });
+      });
     }),
     [Actions.AcceptOffer]: useLoader(async ({ state, commit, dispatch }, id: string) => {
       if (!state.game) throw new TypeError();
@@ -211,7 +215,9 @@ export default new Vuex.Store<RootState>({
 
       commit('updateOffer', { id, offer: null });
       const updater: Updater = (cryptomon) => { cryptomon.isInAnOffer = false; };
-      offer.offeredCryptomons.forEach((offering) => { commit('updateCryptomon', updater); });
+      offer.offeredCryptomons.forEach((offered) => {
+        commit('updateCryptomon', { id: offered, updater });
+      });
     }),
     [Actions.WithdrawOffer]: useLoader(async ({ state, commit }, id: string) => {
       if (!state.game) throw new TypeError();
@@ -223,7 +229,9 @@ export default new Vuex.Store<RootState>({
 
       commit('updateOffer', { id, offer: null });
       const updater: Updater = (cryptomon) => { cryptomon.isInAnOffer = false; };
-      offer.offeredCryptomons.forEach((offering) => { commit('updateCryptomon', updater); });
+      offer.offeredCryptomons.forEach((offered) => {
+        commit('updateCryptomon', { id: offered, updater });
+      });
     }),
 
     // ///////////////////////////
@@ -285,7 +293,7 @@ export default new Vuex.Store<RootState>({
         cryptomon.isReadyToFight = false;
         cryptomon.challenge = null;
       };
-      commit('updateCryptomon', { id: payload.id, updater });
+      commit('updateCryptomon', { id: opponent.id, updater });
       commit('updateCryptomon', { id: challengerId, updater });
     }),
     [Actions.RejectChallenge]: useLoader(async ({ state, getters, commit }, id: string) => {

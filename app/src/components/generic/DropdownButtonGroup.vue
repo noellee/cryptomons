@@ -2,6 +2,7 @@
 import Vue from 'vue';
 import Component from 'vue-class-component';
 import { Prop } from 'vue-property-decorator';
+import _ from 'lodash';
 import IconButton from '@/components/generic/IconButton.vue';
 
 @Component
@@ -14,7 +15,7 @@ export default class DropdownButtonGroup extends Vue {
     const h = this.$createElement;
     const buttons = this.$slots.default || [];
     return h('div', { class: 'dropdown-button-group' },
-      buttons.length === 1
+      _(buttons).filter(b => !b.isComment).size() === 1
         ? buttons
         : [
           this.renderMainButton(),
@@ -36,23 +37,6 @@ export default class DropdownButtonGroup extends Vue {
       },
       this.dropdownText,
     );
-    // return h(
-    //   'button',
-    //   {
-    //     on: { click: this.toggleDropdown },
-    //     class: ['dropdown-button-group', 'secondary'],
-    //   },
-    //   [
-    //     this.dropdownText,
-    //     h(
-    //       'fa-icon',
-    //       {
-    //         class: 'button-icon-right',
-    //         props: { icon: },
-    //       },
-    //     ),
-    //   ],
-    // );
   }
 
   toggleDropdown() {
