@@ -43,13 +43,22 @@ contract CryptomonsGame {
     }
 
     // ////////////////////////////////////
+    // Constants
+    // ////////////////////////////////////
+
+    uint constant MAX_CRYPTOMONS = 2 ** 256 - 1;  // maximum number of cryptomons this game supports
+    uint constant MAX_HEALTH = 100;               // maximum value of a cryptomon's health
+    uint constant MAX_STRENGTH = 100;             // maximum value of a cryptomon's strength
+    uint constant DEFAULT_HEALTH = 50;            // default value of a cryptomon's health
+    uint constant DEFAULT_STRENGTH = 50;          // default value of a cryptomon's strength
+
+    // ////////////////////////////////////
     // STATE VARIABLES
     // ////////////////////////////////////
 
-    uint public starterCryptomonCost = 1 ether;  // cost of creating a starter cryptomon
+    uint public starterCryptomonCost = 1 ether;   // cost of creating a starter cryptomon
 
-    uint public totalCryptomons = 0;             // count of all cryptomons
-    uint max = 2 ** 256 - 1;                     // maximum number of cryptomons this game supports
+    uint public totalCryptomons = 0;              // count of all cryptomons
 
     // maps id => cryptomon
     mapping(uint => Cryptomon) public cryptomons;
@@ -245,15 +254,15 @@ contract CryptomonsGame {
         address owner = msg.sender;
         require(!owners[owner].isInitialized, "Not a new user.");
 
-        Cryptomon storage starter = createCryptomon(owner, element, element, name, 80, 80);
+        Cryptomon storage starter = createCryptomon(owner, element, element, name);
 
         owners[owner].isInitialized = true;
         emit StarterCryptomonCreated(starter.id);
     }
 
-    function createCryptomon(address owner, Element primaryElement, Element secondaryElement, string memory name, uint health, uint strength)
+    function createCryptomon(address owner, Element primaryElement, Element secondaryElement, string memory name)
     private returns (Cryptomon storage cryptomon) {
-        require(totalCryptomons < max, "Cannot create any more Cryptomons in this game.");
+        require(totalCryptomons < MAX_CRYPTOMONS, "Cannot create any more Cryptomons in this game.");
         cryptomon = cryptomons[totalCryptomons];
         cryptomon.id = totalCryptomons;
         cryptomon.owner = owner;
@@ -261,8 +270,8 @@ contract CryptomonsGame {
         cryptomon.primaryElement = primaryElement;
         cryptomon.secondaryElement = secondaryElement;
         cryptomon.name = name;
-        cryptomon.health = health;
-        cryptomon.strength = strength;
+        cryptomon.health = DEFAULT_HEALTH;
+        cryptomon.strength = DEFAULT_STRENGTH;
         owners[owner].cryptomonIds.push(cryptomon.id);
         totalCryptomons++;
     }
@@ -401,12 +410,31 @@ contract CryptomonsGame {
     onlyOwnerOrCoOwner(parent1Id) canBreed(parent1Id)
     onlyOwnerOrCoOwner(parent2Id) canBreed(parent2Id) {
         require(parent1Id != parent2Id, "Cannot breed with oneself.");
-        uint health = (cryptomons[parent1Id].health + cryptomons[parent2Id].health) / 2 + 10;
-        uint strength = (cryptomons[parent1Id].strength + cryptomons[parent2Id].strength) / 2 + 10;
-        Element pElement = cryptomons[parent1Id].primaryElement;
-        Element sElement = cryptomons[parent2Id].primaryElement;
-        Cryptomon storage cryptomon = createCryptomon(msg.sender, pElement, sElement, name, health, strength);
+        int[] memory randoms = generateRandomNumbers(- 10, 10, 4);
+        Element pElement = pickElement(parent1Id, parent2Id, randoms[0]);
+        Element sElement = pickElement(parent1Id, parent2Id, randoms[1]);
+
+        Cryptomon storage cryptomon = createCryptomon(msg.sender, pElement, sElement, name);
+        
+        cryptomon.health = (cryptomons[parent1Id].health + cryptomons[parent2Id].health) / 2;
+        cryptomon.health = wiggle(cryptomon.health, randoms[2], 0, MAX_HEALTH);
+
+        cryptomon.strength = (cryptomons[parent1Id].strength + cryptomons[parent2Id].strength) / 2;
+        cryptomon.strength = wiggle(cryptomon.strength, randoms[3], 0, MAX_STRENGTH);
+        
         emit CryptomonBirth(cryptomon.id);
+    }
+
+    function pickElement(uint parent1Id, uint parent2Id, int seed)
+    private view returns (Element) {
+        Element[4] memory possibleElements = [
+            cryptomons[parent1Id].primaryElement,
+            cryptomons[parent1Id].secondaryElement,
+            cryptomons[parent2Id].primaryElement,
+            cryptomons[parent2Id].secondaryElement
+        ];
+        uint random = uint(keccak256(abi.encode(seed))) % possibleElements.length;
+        return possibleElements[random];
     }
 
     // ////////////////////////////////////
@@ -487,27 +515,37 @@ contract CryptomonsGame {
         Cryptomon storage challenger = cryptomons[challengerId];
         Cryptomon storage opponent = cryptomons[cryptomonId];
         require(challenger.owner != opponent.owner, "Can't fight your own Cryptomons.");
-        uint challengerHealth = deductHealth(challenger.health, opponent.strength);
-        uint opponentHealth = deductHealth(opponent.health, challenger.strength);
+
+        // fight and pick winner
+        int[] memory randoms = generateRandomNumbers(- 4, 5, 5);
+
+        uint challengerHealth = wiggle(challenger.health, randoms[0], 0, MAX_HEALTH);
+        uint opponentHealth = wiggle(opponent.health, randoms[1], 0, MAX_HEALTH);
+        uint challengerStrength = wiggle(challenger.strength, randoms[2], 0, MAX_STRENGTH);
+        uint opponentStrength = wiggle(opponent.strength, randoms[3], 0, MAX_STRENGTH);
+
+        challengerHealth = safeSub(challengerHealth, opponentStrength);
+        opponentHealth = safeSub(opponentHealth, challengerStrength);
+
+        Cryptomon memory winner;
+
+        if (challengerHealth > opponentHealth) {
+            winner = challenger;
+        } else if (challengerHealth < opponentHealth) {
+            winner = opponent;
+        } else {
+            winner = randoms[4] <= 0 ? opponent : challenger;
+        }
+
+        // state changes
         challenger.state = State.Idle;
         opponent.state = State.Idle;
         deleteElementFromArray(battleground, challenger.id);
         deleteElementFromArray(battleground, opponent.id);
 
-        if (challengerHealth > opponentHealth) {
-            addToBalance(challenger.owner, _challenge.stake * 2);
-            emit Fight(opponent.id, challenger.id, challenger.id, challenger.owner);
-        } else {
-            addToBalance(opponent.owner, _challenge.stake * 2);
-            emit Fight(opponent.id, challenger.id, opponent.id, opponent.owner);
-        }
-    }
+        addToBalance(winner.owner, _challenge.stake * 2);
 
-    function deductHealth(uint health, uint deduct) private pure returns (uint) {
-        if (deduct > health) {
-            return 0;
-        }
-        return health - deduct;
+        emit Fight(opponent.id, challenger.id, winner.id, winner.owner);
     }
 
     // ////////////////////////////////////
@@ -556,6 +594,62 @@ contract CryptomonsGame {
         array[index] = array[array.length - 1];
         delete array[array.length - 1];
         array.pop();
+    }
+
+    /// @notice "Wiggle" a value by a factor, and within a range
+    function wiggle(uint value, int factor, uint minVal, uint maxVal)
+    private pure returns (uint result) {
+        if (factor < 0) {
+            result = safeSub(value, uint(- factor));
+        } else {
+            result = safeAdd(value, uint(factor));
+        }
+        result = clamp(result, minVal, maxVal);
+    }
+
+    function clamp(uint val, uint minVal, uint maxVal) private pure returns (uint result) {
+        if (val < minVal) {
+            result = minVal;
+        } else if (val > maxVal) {
+            result = maxVal;
+        } else {
+            result = val;
+        }
+    }
+
+    /// @notice Generates a random array of numbers in range [start, end].
+    /// @dev count can only be 0-255 since we can only get the past 256 blocks
+    /// @param start Start of the range (inclusive)
+    /// @param end End of the range (inclusive)
+    /// @param count The number of random numbers to generate
+    function generateRandomNumbers(int start, int end, uint8 count)
+    private view returns (int[] memory numbers) {
+        require(start <= end, "start must not be larger than end");
+        uint range = uint(end - start + 1);
+        numbers = new int[](count);
+        for (uint i = 0; i < count; i++) {
+            bytes32 hash = keccak256(abi.encode(
+                    blockhash(block.number - i - 1),
+                    blockhash(block.number - count + i),
+                    now));
+            uint random = uint(hash) % range;
+            numbers[i] = int(random) + start;
+        }
+    }
+
+    function safeSub(uint value, uint subtrahend) private pure returns (uint) {
+        if (subtrahend > value) {
+            return 0;
+        }
+        return value - subtrahend;
+    }
+
+    function safeAdd(uint value, uint addend) private pure returns (uint) {
+        uint result = value + addend;
+        if (result < value) {
+            return 2 ** 256 - 1;
+        }
+        return result;
     }
 
     // ////////////////////////////////////
