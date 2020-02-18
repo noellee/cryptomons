@@ -107,6 +107,7 @@ export default new Vuex.Store<RootState>({
     loadWeb3: (state, web3: Web3) => {
       state.web3 = web3;
       state.game = new CryptomonGame(web3, window.localStorage.getItem('cryptomons-contract-address'));
+      window.localStorage.setItem('cryptomons-contract-address', state.game.contractAddress);
     },
     updateContractAddress: async (state, address: string) => {
       window.localStorage.setItem('cryptomons-contract-address', address);
