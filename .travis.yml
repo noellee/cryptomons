@@ -20,7 +20,7 @@ script:
   - ganache-cli --quiet &
   - truffle test
   - truffle compile
-  - truffle migrate
+  - truffle migrate --reset
   - npm run build
 
 deploy:
