@@ -15,12 +15,14 @@ before_install:
 install:
   - cd app
   - npm install 
+  - cd ..
 
 script:
   - ganache-cli --quiet &
   - truffle test
   - truffle compile
   - truffle migrate --reset
+  - cd app
   - npm run build
 
 deploy:
