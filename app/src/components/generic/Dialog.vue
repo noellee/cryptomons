@@ -37,6 +37,7 @@ export default class Dialog extends Vue {
     align-self: center;
     padding: 20px 24px;
     text-align: left;
+    color: #2c3e50;
   }
 
   .dialog > h2 {

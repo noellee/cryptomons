@@ -1,13 +1,32 @@
 import Web3 from 'web3';
-// @ts-ignore
 import { Contract } from 'web3-eth-contract'; // eslint-disable-line import/no-extraneous-dependencies
 import { TransactionReceipt } from 'web3-core';
-import getContract from '@/contracts/CryptomonsGameContract';
 import Cryptomon from './Cryptomon';
 import CryptomonElement from './CryptomonElement';
 import Offer from './Offer';
 import Challenge from './Challenge';
 import FightResult from '@/game/FightResult';
+
+const cryptomonsGameArtifact = require('@/../../build/contracts/CryptomonsGame.json');
+
+function getContractAddress(network: string): string {
+  switch (network) {
+    case '3': // Ropsten
+      return '0x096318cd9b9ac55a28ddcfe6fb78978286228bfa';
+    default:
+      return cryptomonsGameArtifact.networks[network].address;
+  }
+}
+
+function getContract(web3: Web3, address?: string): Contract {
+  const { abi } = cryptomonsGameArtifact;
+  if (!address) {
+    // @ts-ignore
+    address = getContractAddress(web3.currentProvider.networkVersion);
+  }
+  console.log(`Using contract at: ${address}`);
+  return new web3.eth.Contract(abi, address);
+}
 
 export default class CryptomonGame {
   private _web3: Web3;
@@ -16,11 +35,14 @@ export default class CryptomonGame {
 
   private _methods: any;
 
-  private _starterCost: number | undefined;
+  private _starterCost: string | undefined;
 
-  constructor(web3: Web3) {
+  constructor(web3: Web3, contractAddress: string | null) {
     this._web3 = web3;
-    this._contract = getContract(this._web3);
+    this._contract = getContract(
+      this._web3,
+      contractAddress === null ? undefined : contractAddress,
+    );
 
     // due to unknown reasons (maybe metamask related),
     // the default account isn't passed to contract calls
@@ -46,6 +68,10 @@ export default class CryptomonGame {
     });
   }
 
+  get contractAddress(): string {
+    return this._contract.options?.address;
+  }
+
   get defaultAccount(): string {
     const account = this._web3.eth.defaultAccount;
     if (!account) {
@@ -54,10 +80,11 @@ export default class CryptomonGame {
     return account;
   }
 
-  async getStarterCryptomonCost() {
+  async getStarterCryptomonCost(): Promise<string> {
     if (this._starterCost === undefined) {
       this._starterCost = await this._methods.starterCryptomonCost().call();
     }
+    if (this._starterCost === undefined) throw new TypeError(); // still undefined after fetching
     return this._starterCost;
   }
 
@@ -79,7 +106,7 @@ export default class CryptomonGame {
     return this.getCryptomonsByIds(ids);
   }
 
-  async isOwnerInitialized(ownerAddr?: string) {
+  async isOwnerInitialized(ownerAddr?: string): Promise<boolean> {
     const owner = ownerAddr ?? this.defaultAccount;
     return this._methods.isOwnerInitialized(owner).call();
   }
@@ -132,7 +159,7 @@ export default class CryptomonGame {
     return this._methods.getBalance().call();
   }
 
-  async withdrawFunds(amount: string) {
+  async withdrawFunds(amount: string): Promise<void> {
     await this._methods.withdrawFunds(amount).send();
   }
 
@@ -178,7 +205,7 @@ export default class CryptomonGame {
   // Breeding
   // ///////////////////////////
 
-  async breed(parent1: string, parent2: string, name: string) {
+  async breed(parent1: string, parent2: string, name: string): Promise<void> {
     await this._methods.breed(parent1, parent2, name).send();
   }
 
@@ -186,11 +213,11 @@ export default class CryptomonGame {
   // Sharing
   // ///////////////////////////
 
-  async share(id: string, coOwner: string) {
+  async share(id: string, coOwner: string): Promise<void> {
     await this._methods.share(id, coOwner).send();
   }
 
-  async endSharing(id: string) {
+  async endSharing(id: string): Promise<void> {
     await this._methods.endSharing(id).send();
   }
 
@@ -198,27 +225,27 @@ export default class CryptomonGame {
   // Fighting
   // ///////////////////////////
 
-  async readyToFight(id: string) {
+  async readyToFight(id: string): Promise<void> {
     await this._methods.readyToFight(id).send();
   }
 
-  async leaveFight(id: string) {
+  async leaveFight(id: string): Promise<void> {
     await this._methods.leaveFight(id).send();
   }
 
-  async challenge(opponentId: string, challengerId: string, stake: number) {
+  async challenge(opponentId: string, challengerId: string, stake: number): Promise<void> {
     await this._methods.challenge(opponentId, challengerId).send({ value: stake });
   }
 
-  async acceptChallenge(id: string, stake: string) {
+  async acceptChallenge(id: string, stake: string): Promise<void> {
     await this._methods.acceptChallenge(id).send({ value: stake });
   }
 
-  async rejectChallenge(id: string) {
+  async rejectChallenge(id: string): Promise<void> {
     await this._methods.rejectChallenge(id).send();
   }
 
-  async withdrawChallenge(id: string) {
+  async withdrawChallenge(id: string): Promise<void> {
     await this._methods.withdrawChallenge(id).send();
   }
 
@@ -258,10 +285,6 @@ export default class CryptomonGame {
   }
 
   // UTILITY METHODS
-
-  private _toNumber(bnString: string): number {
-    return this._web3.utils.toBN(bnString).toNumber();
-  }
 
   private _isZero(value: string): boolean {
     return this._web3.utils.toBN(value).isZero();

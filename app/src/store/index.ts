@@ -15,8 +15,8 @@ interface RootState {
   ownerIsInitialized: boolean
   cryptomons: Record<string, Cryptomon>
   fetchedOwners: string[]
-  hasFetchedMarketplace: boolean,
-  hasFetchedBattleground: boolean,
+  hasFetchedMarketplace: boolean
+  hasFetchedBattleground: boolean
   web3: Web3 | null
   game: CryptomonGame | null
 }
@@ -106,7 +106,11 @@ export default new Vuex.Store<RootState>({
     },
     loadWeb3: (state, web3: Web3) => {
       state.web3 = web3;
-      state.game = new CryptomonGame(web3);
+      state.game = new CryptomonGame(web3, window.localStorage.getItem('cryptomons-contract-address'));
+    },
+    updateContractAddress: async (state, address: string) => {
+      window.localStorage.setItem('cryptomons-contract-address', address);
+      window.location.reload();
     },
     updateIsLoading: (state, isLoading: boolean) => {
       state.isLoading = isLoading;
@@ -114,13 +118,16 @@ export default new Vuex.Store<RootState>({
   },
   actions: {
     [Actions.InitApp]: async ({ getters, commit }) => {
-      if (!getters.isWeb3Available) {
-        const web3 = await getWeb3();
-        const accounts = await web3.eth.getAccounts();
-        web3.eth.defaultAccount = accounts[0]; // eslint-disable-line prefer-destructuring
-        console.log(`Using account ${web3.eth.defaultAccount}`);
-        commit('loadWeb3', web3);
-      }
+      const web3 = await getWeb3();
+      const accounts = await web3.eth.getAccounts();
+      web3.eth.defaultAccount = accounts[0]; // eslint-disable-line prefer-destructuring
+      console.log(`Using account ${web3.eth.defaultAccount}`);
+      commit('loadWeb3', web3);
+    },
+    [Actions.UpdateContractAddress]: async ({ commit, dispatch }, address: string) => {
+      commit('updateContractAddress', address);
+      await dispatch(Actions.InitApp);
+      await dispatch(Actions.FetchOwnerStatus);
     },
     [Actions.InitStarterCryptomon]: useLoader(async ({ state, commit, dispatch },
       payload: { name: string, element: CryptomonElement }) => {

@@ -1,6 +1,7 @@
 <template>
   <div id="app">
     <AccountBalance v-if="isReady" />
+    <SelectContract />
     <LoadingOverlay v-if="isLoading">Transaction pending...</LoadingOverlay>
     <header>
       <img :src="require('@/assets/logo.png')" height="200px" id="logo" alt="Cryptomons logo">
@@ -21,11 +22,12 @@ import Actions from '@/store/actions';
 import Getters from '@/store/getters';
 import AccountBalance from '@/components/AccountBalance.vue';
 import Loader from '@/components/generic/Loader.vue';
+import SelectContract from '@/components/SelectContract.vue';
 
 @Component({
-  components: { LoadingOverlay: Loader, AccountBalance },
+  components: { LoadingOverlay: Loader, AccountBalance, SelectContract },
 })
-export default class HelloWorld extends Vue {
+export default class CryptomonApp extends Vue {
   beforeCreate() {
     this.$store.dispatch(Actions.InitApp);
   }

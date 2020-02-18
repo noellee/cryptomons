@@ -1,5 +1,6 @@
 enum Actions {
   InitApp = 'initApp',
+  UpdateContractAddress = 'updateContractAddress',
   InitStarterCryptomon = 'initStarterCryptomon',
 
   // Make fetch happen
