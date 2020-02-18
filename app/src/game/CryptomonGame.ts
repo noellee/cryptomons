@@ -14,16 +14,14 @@ function getContractAddress(network: string): string {
     case '3': // Ropsten
       return '0x096318cd9b9ac55a28ddcfe6fb78978286228bfa';
     default:
-      return cryptomonsGameArtifact.networks[network].address;
+      return cryptomonsGameArtifact.networks[network]?.address;
   }
 }
 
 function getContract(web3: Web3, address?: string): Contract {
   const { abi } = cryptomonsGameArtifact;
-  if (!address) {
-    // @ts-ignore
-    address = getContractAddress(web3.currentProvider.networkVersion);
-  }
+  // @ts-ignore
+  address = getContractAddress(web3.currentProvider.networkVersion) || address;
   console.log(`Using contract at: ${address}`);
   return new web3.eth.Contract(abi, address);
 }
