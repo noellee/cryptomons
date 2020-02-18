@@ -5,9 +5,7 @@ sudo: required
 node_js:
   - 13
 
-cache:
-  directories:
-    - app/node_modules
+cache: npm
 
 before_install:
   - npm install -g ganache-cli truffle@5.1
