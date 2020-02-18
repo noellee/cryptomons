@@ -19,6 +19,8 @@ install:
 script:
   - ganache-cli --quiet &
   - truffle test
+  - truffle compile
+  - truffle migrate
   - npm run build
 
 deploy:
