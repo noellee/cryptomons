@@ -13,12 +13,13 @@ before_install:
   - npm install -g ganache-cli truffle@5.1
 
 install:
-  - cd app && npm install 
+  - cd app
+  - npm install 
 
 script:
   - ganache-cli --quiet &
   - truffle test
-  - cd app && npm run build
+  - npm run build
 
 deploy:
   provider: pages
