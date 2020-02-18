@@ -29,7 +29,7 @@ deploy:
   provider: pages
   skip_cleanup: true
   github_token: $GITHUB_TOKEN
-  local_dir: app/build
+  local_dir: app/dist
   keep_history: true
   on: 
     branch: master
