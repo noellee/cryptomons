@@ -13,19 +13,21 @@ before_install:
 install:
   - cd app
   - npm install 
+  - cd ..
 
 script:
   - ganache-cli --quiet &
   - truffle test
   - truffle compile
   - truffle migrate --reset
+  - cd app
   - npm run build
 
 deploy:
   provider: pages
   skip_cleanup: true
   github_token: $GITHUB_TOKEN
-  local_dir: app/build
+  local_dir: app/dist
   keep_history: true
   on: 
     branch: master
