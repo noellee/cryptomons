@@ -5,12 +5,26 @@ sudo: required
 node_js:
   - 13
 
+cache:
+  directories:
+    - app/node_modules
+
 before_install:
   - npm install -g ganache-cli truffle@5.1
 
 install:
-  - npm install 
+  - cd app && npm install 
 
 script:
   - ganache-cli --quiet &
   - truffle test
+  - cd app && npm run build
+
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN
+  local_dir: app/build
+  keep_history: true
+  on: 
+    branch: master
